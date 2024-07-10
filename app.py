@@ -129,7 +129,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-# Replaces {item} and similar placeholders in all prompts and tool names with domain specific item
+# Define map that replaces {item} for domain specific item
 
 domain = os.environ.get("DOMAIN", "game")
 domain_map = {"item": domain, "Item": domain.capitalize(), "ITEM": domain.upper()}
@@ -141,9 +141,10 @@ default_chat_value = [
     ),
 ]
 
-
+# Replace placeholders in tool names with domain specific item
 tool_names = {k: v.format(**domain_map) for k, v in TOOL_NAMES.items()}
 
+# Load the corpus (includes all items in the database)
 item_corpus = BaseGallery(
     GAME_INFO_FILE,
     TABLE_COL_DESC_FILE,
@@ -153,9 +154,11 @@ item_corpus = BaseGallery(
     categorical_cols=CATEGORICAL_COLS,
 )
 
+# Initialize the candidate buffer
 candidate_buffer = CandidateBuffer(item_corpus, num_limit=args.max_candidate_num)
 
-
+# Define tools that are available to the LLM orchestrator. Which tools are available depends
+# on the arguments passed to the script. Tool prompts are imported from prompt.py 
 # The key of dict here is used to map to the prompt
 tools = {
     "BufferStoreTool": FuncToolWrapper(
@@ -200,7 +203,7 @@ tools = {
     ),
 }
 
-
+# Reflection tool is only available for plan-first agent
 if args.enable_reflection:
     critic = Critic(
         model="gpt-4" if "4" in args.engine else "gpt-3.5-turbo",
@@ -212,6 +215,7 @@ if args.enable_reflection:
 else:
     critic = None
 
+# Different agent types
 if args.plan_first and args.langchain:
     AgentType = CRSAgentPlanFirst
 elif args.plan_first and not args.langchain:
@@ -245,10 +249,18 @@ logger.add(
     format="<lc>[{time:YYYY-MM-DD HH:mm:ss} {level}] <b>{message}</b></lc>",
 )
 
+# Updates conversation history by adding user message. Messages have the convention
+# [user_message, chatbot_reply]. When the user sends a message, the chatbot has not
+# replied yet. The first message is [None,chatbot_welcome_message] to start the 
+# conversation.
 
 def user(user_message, history):
     return "", history + [[user_message, None]], history + [[user_message, None]]
 
+
+# Chat conversation logic, where the user sends a message and the chatbot replies. Each time
+# the chatbot receives a message, it runs a new cycle of one-step planning, tool calling and
+# response generation (bot.run_gr function). The chatbot then returns the response to the user.
 
 bot.init_agent()
 bot.set_mode("accuracy")

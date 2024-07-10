@@ -122,6 +122,7 @@ class CandidateBuffer:
         The method would be called when one turn chat is finished
         """
         self.init_memory = []
+        # Looks like clear add back all items from corpus to the candidate buffer. Thats not bad actually
         self.memory = list(range(1, len(self.item_corpus)))
         self.plans = []
         self.failed_plans = []
