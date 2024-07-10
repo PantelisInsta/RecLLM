@@ -5,16 +5,16 @@ from typing import *
 import numpy as np
 from numpy.typing import NDArray
 
-from llm4crs.corups import BaseGallery
+from llm4crs.corpus import BaseGallery
 from llm4crs.prompt import *
 
 
 class CandidateBuffer:
 
-    def __init__(self, item_corups: BaseGallery, num_limit: int=None) -> None:
-        self.item_corups = item_corups
+    def __init__(self, item_corpus: BaseGallery, num_limit: int=None) -> None:
+        self.item_corpus = item_corpus
         self.init_memory = []   # to store user given candidates, deprecated
-        self.memory = list(range(1, len(self.item_corups)))
+        self.memory = list(range(1, len(self.item_corpus)))
         self.plans = []
         self.failed_plans = []
         self.num_limit = num_limit
@@ -52,8 +52,8 @@ class CandidateBuffer:
             print("Warning: `init_candidates` should be called when the buffer is empty")
         try:
             candidates = [x.strip() for x in inputs.split(';;')]
-            candidates = self.item_corups.fuzzy_match(candidates, 'title')
-            candidate_ids = self.item_corups.convert_title_2_info(candidates, col_names='id')['id']
+            candidates = self.item_corpus.fuzzy_match(candidates, 'title')
+            candidate_ids = self.item_corpus.convert_title_2_info(candidates, col_names='id')['id']
             if self.num_limit is not None:
                 self.init_memory = list(candidate_ids)[:self.num_limit]
                 self.memory = list(candidate_ids)[:self.num_limit]
@@ -122,7 +122,7 @@ class CandidateBuffer:
         The method would be called when one turn chat is finished
         """
         self.init_memory = []
-        self.memory = list(range(1, len(self.item_corups)))
+        self.memory = list(range(1, len(self.item_corpus)))
         self.plans = []
         self.failed_plans = []
         self.similarity = None

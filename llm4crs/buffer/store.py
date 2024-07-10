@@ -3,7 +3,7 @@
 
 import os
 
-from llm4crs.corups.base import BaseGallery
+from llm4crs.corpus.base import BaseGallery
 
 _NAME = "Game Candidates Storing Tool"
 _DESC = """The tool is useful when human give candidate game names in conversation history. \
@@ -14,17 +14,17 @@ The input of the tool should be a list of game names split by comma, such as "ga
 class CandidateStoreTool:
     """used to put candidate games extracted from conversation to data bus"""
 
-    def __init__(self, item_corups: BaseGallery) -> None:
+    def __init__(self, item_corpus: BaseGallery) -> None:
         self.name = _NAME
         self.desc = _DESC
-        self.item_corups = item_corups
+        self.item_corpus = item_corpus
 
 
     def run(self, inputs: str) -> str:
         try:
             games = [x.strip() for x in inputs.split(',')]
-            titles = self.item_corups.fuzzy_match(games, 'title')
-            game_ids = self.item_corups.convert_title_2_info(titles, col_names='id')['id']
+            titles = self.item_corpus.fuzzy_match(games, 'title')
+            game_ids = self.item_corpus.convert_title_2_info(titles, col_names='id')['id']
             os.environ['llm4crs_candidates'] = f"[{','.join([str(x) for x in game_ids])}]"
             return f"{len(game_ids)} candidate games are given by human in conversation and stored in buffer. " \
                 "Those games are visible to other tools to be further filtered and ranked."

@@ -7,7 +7,7 @@ from typing import *
 import numpy as np
 import torch
 from llm4crs.buffer import CandidateBuffer
-from llm4crs.corups import BaseGallery
+from llm4crs.corpus import BaseGallery
 from llm4crs.utils import get_topk_index, normalize_np
 from loguru import logger
 from unirec.model.base.recommender import BaseRecommender
@@ -20,14 +20,14 @@ class RecModelTool:
         name: str,
         desc: str,
         model_fpath: str,
-        item_corups: BaseGallery,
+        item_corpus: BaseGallery,
         buffer: CandidateBuffer,
         rec_num: int = None,
         max_hist_len: int = 50,
         temperature: float = 1.0,
         device: str = "cpu",
     ):
-        self.item_corups = item_corups
+        self.item_corpus = item_corpus
         self.buffer = buffer
         self.name = name
         self.desc = desc
@@ -73,8 +73,8 @@ class RecModelTool:
 
         try:
             if (len(prefer)) > 0:
-                prefer = self.item_corups.fuzzy_match(prefer, "title")
-                prefer_game_ids = self.item_corups.convert_title_2_info(
+                prefer = self.item_corpus.fuzzy_match(prefer, "title")
+                prefer_game_ids = self.item_corpus.convert_title_2_info(
                     prefer, col_names="id"
                 )["id"]
                 if isinstance(prefer_game_ids, int):
@@ -83,8 +83,8 @@ class RecModelTool:
                 prefer_game_ids = []
 
             if (len(unwanted)) > 0:
-                unwanted = self.item_corups.fuzzy_match(unwanted, "title")
-                unwanted_game_ids = self.item_corups.convert_title_2_info(
+                unwanted = self.item_corpus.fuzzy_match(unwanted, "title")
+                unwanted_game_ids = self.item_corpus.convert_title_2_info(
                     unwanted, col_names="id"
                 )["id"]
                 if isinstance(unwanted_game_ids, int):
@@ -191,7 +191,7 @@ class RecModelTool:
     def rank_by_pop(
         self, candidates: List[int], N: int, masked_items: List[int]
     ) -> List[int]:
-        pop = self.item_corups.convert_id_2_info(candidates, col_names=["visited_num"])[
+        pop = self.item_corpus.convert_id_2_info(candidates, col_names=["visited_num"])[
             "visited_num"
         ]
         return self._rank_by_x(candidates, N, np.log(np.array(pop) + 1), masked_items)

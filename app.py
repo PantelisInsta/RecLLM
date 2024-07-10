@@ -12,7 +12,7 @@ from llm4crs.agent import CRSAgent
 from llm4crs.agent_plan_first import CRSAgentPlanFirst
 from llm4crs.agent_plan_first_openai import CRSAgentPlanFirstOpenAI
 from llm4crs.buffer import CandidateBuffer
-from llm4crs.corups import BaseGallery
+from llm4crs.corpus import BaseGallery
 from llm4crs.critic import Critic
 from llm4crs.environ_variables import *
 from llm4crs.mapper import MapTool
@@ -129,6 +129,8 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+# Replaces {item} and similar placeholders in all prompts and tool names with domain specific item
+
 domain = os.environ.get("DOMAIN", "game")
 domain_map = {"item": domain, "Item": domain.capitalize(), "ITEM": domain.upper()}
 
@@ -142,7 +144,7 @@ default_chat_value = [
 
 tool_names = {k: v.format(**domain_map) for k, v in TOOL_NAMES.items()}
 
-item_corups = BaseGallery(
+item_corpus = BaseGallery(
     GAME_INFO_FILE,
     TABLE_COL_DESC_FILE,
     f"{domain}_information",
@@ -151,7 +153,7 @@ item_corups = BaseGallery(
     categorical_cols=CATEGORICAL_COLS,
 )
 
-candidate_buffer = CandidateBuffer(item_corups, num_limit=args.max_candidate_num)
+candidate_buffer = CandidateBuffer(item_corpus, num_limit=args.max_candidate_num)
 
 
 # The key of dict here is used to map to the prompt
@@ -164,13 +166,13 @@ tools = {
     "LookUpTool": QueryTool(
         name=tool_names["LookUpTool"],
         desc=LOOK_UP_TOOL_DESC.format(**domain_map),
-        item_corups=item_corups,
+        item_corpus=item_corpus,
         buffer=candidate_buffer,
     ),
     "HardFilterTool": SQLSearchTool(
         name=tool_names["HardFilterTool"],
         desc=HARD_FILTER_TOOL_DESC.format(**domain_map),
-        item_corups=item_corups,
+        item_corpus=item_corpus,
         buffer=candidate_buffer,
         max_candidates_num=args.max_candidate_num,
     ),
@@ -178,7 +180,7 @@ tools = {
         name=tool_names["SoftFilterTool"],
         desc=SOFT_FILTER_TOOL_DESC.format(**domain_map),
         item_sim_path=ITEM_SIM_FILE,
-        item_corups=item_corups,
+        item_corpus=item_corpus,
         buffer=candidate_buffer,
         top_ratio=args.similar_ratio,
     ),
@@ -186,14 +188,14 @@ tools = {
         name=tool_names["RankingTool"],
         desc=RANKING_TOOL_DESC.format(**domain_map),
         model_fpath=MODEL_CKPT_FILE,
-        item_corups=item_corups,
+        item_corpus=item_corpus,
         buffer=candidate_buffer,
         rec_num=args.rank_num,
     ),
     "MapTool": MapTool(
         name=tool_names["MapTool"],
         desc=MAP_TOOL_DESC.format(**domain_map),
-        item_corups=item_corups,
+        item_corpus=item_corpus,
         buffer=candidate_buffer,
     ),
 }
@@ -221,7 +223,7 @@ bot = AgentType(
     domain,
     tools,
     candidate_buffer,
-    item_corups,
+    item_corpus,
     args.engine,
     args.bot_type,
     max_tokens=args.max_output_tokens,

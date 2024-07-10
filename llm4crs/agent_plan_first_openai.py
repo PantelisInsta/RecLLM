@@ -246,7 +246,7 @@ class CRSAgentPlanFirstOpenAI:
         domain: str,
         tools: Dict[str, Callable],
         candidate_buffer,
-        item_corups,
+        item_corpus,
         engine: str = "text-davinci-003",
         bot_type: str = "completion",
         enable_shorten: bool = False,
@@ -276,7 +276,7 @@ class CRSAgentPlanFirstOpenAI:
             "ToolExecutor", TOOLBOX_DESC, {tool.name: tool for tool in self._tools}
         )
         self.candidate_buffer = candidate_buffer
-        self.item_corups = item_corups
+        self.item_corpus = item_corpus
         self.engine = engine
         assert bot_type in {
             "chat",
@@ -422,7 +422,7 @@ class CRSAgentPlanFirstOpenAI:
             "history": "",  # chat history
             "input": inputs["input"],
             "reflection": "" if not reflection else reflection,
-            "table_info": self.item_corups.info(query=inputs["input"])
+            "table_info": self.item_corpus.info(query=inputs["input"])
         }
 
         self.toolbox.failed_times = 0

@@ -40,7 +40,7 @@ class BaseGallery:
                  fuzzy_cols: List[str]=['title'], categorical_cols: List[str]=['tags']) -> None:
         self.fpath = fpath
         self.name = name    # name of the table
-        self.corups = self._read_file(fpath, columns, sep, parquet_engine)
+        self.corpus = self._read_file(fpath, columns, sep, parquet_engine)
         self.disp_cate_topk: int = 6
         self.disp_cate_total: int = 10
         self._fuzzy_bert_base = "thenlper/gte-base"
@@ -49,12 +49,12 @@ class BaseGallery:
 
         self.categorical_col_values = {}
         for col in categorical_cols:
-            _explode_df = self.corups.explode(col)[col]
+            _explode_df = self.corpus.explode(col)[col]
             self.categorical_col_values[col] = _explode_df[~ _explode_df.isna()].unique()
-            if isinstance(self.corups[col][0], str):
+            if isinstance(self.corpus[col][0], str):
                 pass
             else:
-                self.corups[col] = self.corups[col].apply(lambda x: ', '.join(x))
+                self.corpus[col] = self.corpus[col].apply(lambda x: ', '.join(x))
 
         if torch.cuda.is_available():
             device = 'cuda'
@@ -63,8 +63,8 @@ class BaseGallery:
         _fuzzy_bert_engine = SentenceTransformer(self._fuzzy_bert_base, device=device)
         self.fuzzy_engine: Dict[str, SentBERTEngine] = {
             col: SentBERTEngine(
-                self.corups[col].to_numpy(),
-                self.corups["id"].to_numpy(),
+                self.corpus[col].to_numpy(),
+                self.corpus["id"].to_numpy(),
                 case_sensitive=False,
                 model=_fuzzy_bert_engine
             )
@@ -84,13 +84,13 @@ class BaseGallery:
             model=_fuzzy_bert_engine
         )   # fuzzy engine for column names
         # title as index
-        self.corups_title = self.corups.set_index('title', drop=True)
+        self.corpus_title = self.corpus.set_index('title', drop=True)
         # id as index
-        self.corups.set_index('id', drop=True, inplace=True)
+        self.corpus.set_index('id', drop=True, inplace=True)
 
 
-    def __call__(self, sql: str, corups: pd.DataFrame=None, return_id_only: bool=True) -> List:
-        """Search in corups with SQL query
+    def __call__(self, sql: str, corpus: pd.DataFrame=None, return_id_only: bool=True) -> List:
+        """Search in corpus with SQL query
         
         Args:
             sql: A sql query command.
@@ -98,28 +98,28 @@ class BaseGallery:
         Returns:
             list: the result represents by id
         """
-        if corups is None:
-            result = sqldf(sql, {self.name: self.corups})    # all games
+        if corpus is None:
+            result = sqldf(sql, {self.name: self.corpus})    # all games
         else:
-            result = sqldf(sql, {self.name: corups})   # games in buffer
+            result = sqldf(sql, {self.name: corpus})   # games in buffer
 
         if return_id_only:
-            result = result[self.corups.index.name].to_list()
+            result = result[self.corpus.index.name].to_list()
         return result
 
 
     def __len__(self) -> int:
-        return len(self.corups)
+        return len(self.corpus)
 
     def info(self, remove_game_titles: bool=False, query: str=None):
         prefix = 'Table information:'
         table_name = f"Table Name: {self.name}"
         cols_info = "Column Names, Data Types and Column meaning:"
-        cols_info += f"\n    - {self.corups.index.name}({_pd_type_to_sql_type(self.corups.index)}): {self.column_meaning[self.corups.index.name]}"
-        for col in self.corups.columns:
+        cols_info += f"\n    - {self.corpus.index.name}({_pd_type_to_sql_type(self.corpus.index)}): {self.column_meaning[self.corpus.index.name]}"
+        for col in self.corpus.columns:
             if remove_game_titles and 'title' in col:
                 continue
-            dtype = _pd_type_to_sql_type(self.corups[col])
+            dtype = _pd_type_to_sql_type(self.corpus[col])
             cols_info += f"\n    - {col}({dtype}): {self.column_meaning[col]}"
             if col == 'tags':
                 disp_values = self.sample_categoricol_values(col, total_n=self.disp_cate_total, query=query, topk=self.disp_cate_topk)
@@ -127,14 +127,14 @@ class BaseGallery:
                 cols_info += _prefix
 
             if dtype in {'float', 'datetime', 'integer'}:
-                _min = self.corups[col].min()
-                _max = self.corups[col].max()
-                _mean = self.corups[col].mean()
-                _median = self.corups[col].median()
+                _min = self.corpus[col].min()
+                _max = self.corpus[col].max()
+                _mean = self.corpus[col].mean()
+                _median = self.corpus[col].median()
                 _prefix = f" Value ranges from {_min} to {_max}. The average value is {_mean}. The median is {_median}."
                 cols_info += _prefix
 
-        primary_key = f"Primary Key: {self.corups.index.name}"
+        primary_key = f"Primary Key: {self.corpus.index.name}"
         categorical_cols = list(self.categorical_col_values.keys())
         note = f"Note that [{','.join(categorical_cols)}] columns are categorical, must use related values to search otherwise no result would be returned."
         res = ''
@@ -174,7 +174,7 @@ class BaseGallery:
         
         """
         if col_names is None:
-            col_names = self.corups.columns
+            col_names = self.corpus.columns
         else:
             if isinstance(col_names, str):
                 col_names = [col_names]
@@ -184,9 +184,9 @@ class BaseGallery:
                 raise_error(TypeError, "Not supported type for `col_names`.")
 
         if isinstance(item_id, int):
-            items = self.corups.loc[item_id][col_names].to_dict()
+            items = self.corpus.loc[item_id][col_names].to_dict()
         elif isinstance(item_id, list) or isinstance(item_id, np.ndarray):
-            items = self.corups.loc[item_id][col_names].to_dict(orient='list')
+            items = self.corpus.loc[item_id][col_names].to_dict(orient='list')
         else:
             raise_error(TypeError, "Not supported type for `item_id`.")
 
@@ -205,7 +205,7 @@ class BaseGallery:
         
         """
         if col_names is None:
-            col_names = self.corups_title.columns
+            col_names = self.corpus_title.columns
         else:
             if isinstance(col_names, str):
                 col_names = [col_names]
@@ -215,9 +215,9 @@ class BaseGallery:
                 raise_error(TypeError, "Not supported type for `col_names`.")
 
         if isinstance(titles, str) or (isinstance(titles, np.ndarray) and len(titles.shape)==0):
-            items = self.corups_title.loc[titles][col_names].to_dict()
+            items = self.corpus_title.loc[titles][col_names].to_dict()
         elif isinstance(titles, list) or (isinstance(titles, np.ndarray) and len(titles.shape)>0):
-            items = self.corups_title.loc[titles][col_names].to_dict(orient='list')
+            items = self.corpus_title.loc[titles][col_names].to_dict(orient='list')
         else:
             raise_error(TypeError, "Not supported type for `titles`.")
 
@@ -235,7 +235,7 @@ class BaseGallery:
             raise_error(TypeError, "Not support for such file type now.")
         if columns is not None:
             df = df[columns]
-        print(f"Columns in item corups: {df.columns}.")
+        print(f"Columns in item corpus: {df.columns}.")
         return df
 
 
@@ -247,8 +247,8 @@ class BaseGallery:
 
     def _required_columns_validate(self) -> None:
         for col in _REQUIRED_COLUMNS:
-            if col not in self.corups.columns:
-                raise_error(ValueError, f"`id` and `name` are required in item corups table but {col} not found, please check the table file `{self.fpath}`.")
+            if col not in self.corpus.columns:
+                raise_error(ValueError, f"`id` and `name` are required in item corpus table but {col} not found, please check the table file `{self.fpath}`.")
 
     def fuzzy_match(self, value: Union[str, List[str]], col: str) -> Union[str, List[str]]:
         if col not in self.fuzzy_engine:

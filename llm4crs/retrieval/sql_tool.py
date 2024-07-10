@@ -6,7 +6,7 @@ import re
 import random
 from loguru import logger
 
-from llm4crs.corups import BaseGallery
+from llm4crs.corpus import BaseGallery
 from llm4crs.buffer import CandidateBuffer
 from llm4crs.utils.sql import extract_columns_from_where
 
@@ -14,8 +14,8 @@ from llm4crs.utils.sql import extract_columns_from_where
 
 class SQLSearchTool:
 
-    def __init__(self, name: str, desc: str, item_corups: BaseGallery, buffer: CandidateBuffer, max_candidates_num: int=None) -> None:
-        self.item_corups = item_corups
+    def __init__(self, name: str, desc: str, item_corpus: BaseGallery, buffer: CandidateBuffer, max_candidates_num: int=None) -> None:
+        self.item_corpus = item_corpus
         self.buffer = buffer
         self.name = name
         self.desc = desc
@@ -28,7 +28,7 @@ class SQLSearchTool:
         candidates = self.buffer.get()
         if len(candidates) > 0:
             info += f"Before {self.name}: There are {len(candidates)} candidates in buffer. \n"
-            corups = self.item_corups.corups.loc[candidates]
+            corpus = self.item_corpus.corpus.loc[candidates]
         else:
             info += f"Before {self.name}: There are {len(candidates)} candidates in buffer. Stop execution. \n"
             return info
@@ -37,14 +37,14 @@ class SQLSearchTool:
         try:
             inputs = self.rewrite_sql(inputs)
             logger.debug(f"Rewrite SQL: {inputs}")
-            info += f"{self.name}: The input SQL is rewritten as {inputs} because some {list(self.item_corups.categorical_col_values.keys())} are not existing. \n"
+            info += f"{self.name}: The input SQL is rewritten as {inputs} because some {list(self.item_corpus.categorical_col_values.keys())} are not existing. \n"
         except Exception as e:
             logger.exception(e)
             info += f"{self.name}: something went wrong in execution, the tool is broken for current input. The candidates are not modified.\n"
             return info
 
         try:
-            candidates = self.item_corups(inputs, corups=corups)    # list of ids
+            candidates = self.item_corpus(inputs, corpus=corpus)    # list of ids
             n = len(candidates)
             _info = f"After {self.name}: There are {n} eligible items. "
             if self.max_candidates_num is not None:
@@ -77,15 +77,15 @@ class SQLSearchTool:
 
     def rewrite_sql(self, sql: str) -> str:
         """Rewrite SQL command using fuzzy search"""
-        sql = re.sub(r'\bFROM\s+(\w+)\s+WHERE', f'FROM {self.item_corups.name} WHERE', sql, flags=re.IGNORECASE)
+        sql = re.sub(r'\bFROM\s+(\w+)\s+WHERE', f'FROM {self.item_corpus.name} WHERE', sql, flags=re.IGNORECASE)
         
         # groudning cols
         cols = extract_columns_from_where(sql)
-        existing_cols = set(self.item_corups.column_meaning.keys())
+        existing_cols = set(self.item_corpus.column_meaning.keys())
         col_replace_dict = {}
         for col in cols:
             if col not in existing_cols:
-                mapped_col = self.item_corups.fuzzy_match(col, 'sql_cols')
+                mapped_col = self.item_corpus.fuzzy_match(col, 'sql_cols')
                 col_replace_dict[col] = f"{mapped_col}"
         for k, v in col_replace_dict.items():
             sql = sql.replace(k, v)
@@ -95,9 +95,9 @@ class SQLSearchTool:
         res = re.findall(pattern, sql)
         replace_dict = {}
         for col, value in res:
-            if col not in self.item_corups.fuzzy_engine:
+            if col not in self.item_corpus.fuzzy_engine:
                 continue
-            replace_value = str(self.item_corups.fuzzy_match(value, col))
+            replace_value = str(self.item_corpus.fuzzy_match(value, col))
             replace_value = replace_value.replace("'", "''")    # escaping string for sqlite
             replace_dict[f"%{value}%"] = f"%{replace_value}%"
 

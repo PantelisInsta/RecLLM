@@ -5,7 +5,7 @@ import os
 import random
 from typing import *
 
-from llm4crs.corups import BaseGallery
+from llm4crs.corpus import BaseGallery
 from llm4crs.buffer import CandidateBuffer
 from llm4crs.utils import extract_integers_from_string
 
@@ -18,10 +18,10 @@ The default value is 5 if human doesn't give."""
 
 
 class MapTool:
-    def __init__(self, name: str, desc: str, item_corups: BaseGallery, buffer: CandidateBuffer, max_rec_num: int=20, return_cols: List[str]=['title']) -> None:
+    def __init__(self, name: str, desc: str, item_corpus: BaseGallery, buffer: CandidateBuffer, max_rec_num: int=20, return_cols: List[str]=['title']) -> None:
         self.name = name
         self.desc = desc
-        self.item_corups = item_corups
+        self.item_corpus = item_corpus
         self.buffer = buffer
         self.max_rec_num = max_rec_num
         self.return_cols = return_cols
@@ -44,13 +44,13 @@ class MapTool:
 
         if len(id) <= 0:
             # prefix += "There is no candidate in buffer, randomly sample {} as recommendation. ".format(n)
-            # id = random.sample(list(range(1, self.item_corups.corups.shape[0]+1)), n)
+            # id = random.sample(list(range(1, self.item_corpus.corpus.shape[0]+1)), n)
             return "There is no suitable items."
         else:
             prefix += "There is {} candidates in buffer, select the first {} as recommendation. ".format(len(id), min(n, len(id)))
             id = id[:n]
         
-        info = self.item_corups.convert_id_2_info(id, col_names=self.return_cols)
+        info = self.item_corpus.convert_id_2_info(id, col_names=self.return_cols)
 
         reco_info = []
         for i in range(len(id)):
