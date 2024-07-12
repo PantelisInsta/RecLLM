@@ -1,3 +1,4 @@
+# original packages of RecAI
 pandasql==0.7.3
 sqlparse==0.4.2
 langchain==0.0.312
@@ -15,4 +16,24 @@ SQLAlchemy==1.4.46
 torch>=1.12.1,<=1.13.1
 unirec>=0.0.1a4
 pandas<2.1.0
+
+# additional packages
 pysqlite3-binary
+
+# To access instacart data
+fspy
+instalog
+pandas
+instacart_monitoring
+pumpkinpy
+pumpkinpy-client
+
+# additional stuff required for instacart data
+instacart-roulette-daemon-client
+boto3
+tensorflow==2.12.0
+instacart-datastores[s3,snowflake]==1.0.4
+posixfs==1.0.1
+griffin-sdk[lightgbm]==1.25.2
+snowflake-connector-python==3.10.
+snowflake-sqlalchemy==1.5.3

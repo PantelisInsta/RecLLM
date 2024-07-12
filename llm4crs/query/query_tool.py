@@ -14,6 +14,10 @@ from llm4crs.utils.sql import extract_columns_from_where
 
 
 class QueryTool:
+    '''
+    Used to search information from the item corpus. Receives a SQL command as input and returns the search result. 
+    If need be, the SQL command is rewritten to match the item corpus.
+    '''
 
     def __init__(self, name: str, desc: str, item_corpus: BaseGallery, buffer, result_max_token: int=512) -> None:
         self.item_corpus = item_corpus
@@ -25,6 +29,8 @@ class QueryTool:
 
 
     def run(self, inputs: str) -> str:
+        """Search information from the item corpus. Truncate the result if it exceeds the token limit."""
+
         logger.debug(f"\nSQL from AGI: {inputs}")
         info = ""
         output = "can not seach related information."
@@ -44,10 +50,12 @@ class QueryTool:
                 pass
             _any_cut = False
 
+            # If the result is too long, sample results randomly
             if len(res) > self._max_record_num:
                 _any_cut = True
                 res = random.sample(res, k=self._max_record_num)
 
+            # If results exceed token limit, shorten the result by cutting off the last words of each record
             if num_tokens_from_string(json.dumps(res)) > self.result_max_token:
                 token_limit_per_record = self.result_max_token // (len(res)+1)
 
@@ -105,15 +113,17 @@ class QueryTool:
             logger.debug(e)
             info += f"{self.name}: some thing went wrong in execution, the tool is broken for current input. \n"
         
+        # Track tool usage
         self.buffer.track(self.name, inputs, "Some item information.")
         logger.debug(info)
+
         return output
 
     def rewrite_sql(self, sql: str) -> str:
         """Rewrite SQL command using fuzzy search"""
         sql = re.sub(r'\bFROM\s+(\w+)\s+WHERE', f'FROM {self.item_corpus.name} WHERE', sql, flags=re.IGNORECASE)
         
-        # groudning cols
+        # grounding cols
         cols = extract_columns_from_where(sql)
         existing_cols = set(self.item_corpus.column_meaning.keys())
         col_replace_dict = {}
@@ -137,4 +147,5 @@ class QueryTool:
 
         for k, v in replace_dict.items():
             sql = sql.replace(k, v)
+            
         return sql

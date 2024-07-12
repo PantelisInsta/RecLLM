@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-import sqlite_override
+import setup_env
 import argparse
 import os
 import sys

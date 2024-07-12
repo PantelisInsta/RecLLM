@@ -21,6 +21,9 @@ from llm4crs.memory.memory import UserProfileMemory
 
 
 class ToolBox:
+    '''
+    Sets up and executes the tools in the toolbox. It also checks if the plan is correct
+    '''
     def __init__(self, name: str, desc: str, tools: Dict[str, Callable[..., Any]]):
         self.name = name
         self.desc = desc
