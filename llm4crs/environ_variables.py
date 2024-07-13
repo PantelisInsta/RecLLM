@@ -4,7 +4,7 @@
 import os
 import json
 
-_domain = os.environ.get('DOMAIN', 'game')
+_domain = os.environ.get('DOMAIN', 'groceries')
 __filepath = os.path.dirname(__file__)
 __domain_resource_dir = os.path.abspath(os.path.join(__filepath, f'../resources/{_domain}'))
 UNIREC_DIR = os.path.abspath(os.path.join(__filepath, '../UniRec/'))

@@ -131,7 +131,7 @@ args = parser.parse_args()
 
 # Define map that replaces {item} for domain specific item
 
-domain = os.environ.get("DOMAIN", "game")
+domain = os.environ.get("DOMAIN", "groceries")
 domain_map = {"item": domain, "Item": domain.capitalize(), "ITEM": domain.upper()}
 
 default_chat_value = [
