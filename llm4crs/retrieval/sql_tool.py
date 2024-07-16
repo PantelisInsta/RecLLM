@@ -13,16 +13,20 @@ from llm4crs.utils.sql import extract_columns_from_where
 
 
 class SQLSearchTool:
+    """
+    Filter the candidates in the buffer with the SQL command.
+    """
 
     def __init__(self, name: str, desc: str, item_corpus: BaseGallery, buffer: CandidateBuffer, max_candidates_num: int=None) -> None:
-        self.item_corpus = item_corpus
-        self.buffer = buffer
+        self.item_corpus = item_corpus   # BaseGallery object containing all items
+        self.buffer = buffer    # CandidateBuffer object containing the current candidates
         self.name = name
         self.desc = desc
         self.max_candidates_num = max_candidates_num
 
 
     def run(self, inputs: str) -> str:
+        # inputs is a SQL command
         # candidates = eval(os.environ.get("llm4crs_candidates", "[]"))
         info = ""
         candidates = self.buffer.get()
@@ -47,11 +51,15 @@ class SQLSearchTool:
             candidates = self.item_corpus(inputs, corpus=corpus)    # list of ids
             n = len(candidates)
             _info = f"After {self.name}: There are {n} eligible items. "
+            # If max_candidates_num is set, truncate the candidates
+            # max_candidates_num is a hyperparameter set with argparse
             if self.max_candidates_num is not None:
                 if len(candidates) > self.max_candidates_num:
+                    # If the SQL command contains "order", select the first max_candidates_num items
                     if "order" in inputs.lower():
                         candidates = candidates[: self.max_candidates_num]
                         _info += f"Select the first {self.max_candidates_num} items from all eligible items ordered by the SQL. "
+                    # Otherwise, sample max_candidates_num items randomly
                     else:
                         candidates = random.sample(candidates, k=self.max_candidates_num)
                         _info += f"Random sample {self.max_candidates_num} items from all eligible items. "
@@ -61,6 +69,7 @@ class SQLSearchTool:
                 pass
 
             info += _info
+            # Store the candidates in the buffer
             self.buffer.push(self.name, candidates)
         except Exception as e:
             logger.debug(e)
@@ -76,10 +85,15 @@ class SQLSearchTool:
 
 
     def rewrite_sql(self, sql: str) -> str:
-        """Rewrite SQL command using fuzzy search"""
+        """
+        Rewrite SQL command using fuzzy search. Looks into the SQL command and 
+        replaces the column names and categorical values with the closest match
+        from the item corpus.
+        """
+
         sql = re.sub(r'\bFROM\s+(\w+)\s+WHERE', f'FROM {self.item_corpus.name} WHERE', sql, flags=re.IGNORECASE)
         
-        # groudning cols
+        # grounding cols
         cols = extract_columns_from_where(sql)
         existing_cols = set(self.item_corpus.column_meaning.keys())
         col_replace_dict = {}
@@ -103,4 +117,5 @@ class SQLSearchTool:
 
         for k, v in replace_dict.items():
             sql = sql.replace(k, v)
+
         return sql

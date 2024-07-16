@@ -15,7 +15,7 @@ TOOL_NAMES = {
 
 
 CANDIDATE_STORE_TOOL_DESC = """
-The tool is useful to save candidate {item}s into buffer as the initial candidates, following tools would filter or ranking {item}s from those canidates. \
+The tool is useful to save candidate {item}s into buffer as the initial candidates, following tools would filter or ranking {item}s from those candidates. \
 For example, "Please select the most suitable {item} from those {item}s". \
 Don't use this tool when the user hasn't specified that they want to select from a specific set of {item}s. \
 The input of the tool should be a string of {item} names split by two ';', such as "{ITEM}1;; {ITEM}2;; {ITEM}3". 

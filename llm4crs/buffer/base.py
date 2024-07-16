@@ -10,13 +10,16 @@ from llm4crs.prompt import *
 
 
 class CandidateBuffer:
+    """
+    Implements a buffer to store candidate items for further consideration.
+    """
 
     def __init__(self, item_corpus: BaseGallery, num_limit: int=None) -> None:
-        self.item_corpus = item_corpus
+        self.item_corpus = item_corpus # full corpus of items
         self.init_memory = []   # to store user given candidates, deprecated
-        self.memory = list(range(1, len(self.item_corpus)))
-        self.plans = []
-        self.failed_plans = []
+        self.memory = list(range(1, len(self.item_corpus))) # to store current candidates
+        self.plans = [] # to store the plans used to get the current candidates
+        self.failed_plans = [] # to store the failed plans, for replanning
         self.num_limit = num_limit
         self.tracker = []
         self.similarity = None
@@ -43,7 +46,9 @@ class CandidateBuffer:
 
 
     def init_candidates(self, inputs: str) -> str:
-        """ Init init_memory with user given candidates
+        """ 
+        Init init_memory with user given candidates. Not used in the current implementation, as the buffer 
+        is initialized with all items in the corpus.
         
         Args:
             inputs (str): candidate names written to the buffer, names are concantenated by ',' from LLM
@@ -84,7 +89,8 @@ class CandidateBuffer:
 
 
     def update(self, tool: str, candidates: Union[List[int], NDArray[np.int32]]) -> None:
-        """ Update candidates buffer memory
+        """ Update candidates buffer memory after a tool is used. The candidates suggested by
+        the tool replace the previous candidates in the buffer (in self.memory).
 
         Args:
             tool (str): tool name where the update is triggered 
@@ -92,11 +98,12 @@ class CandidateBuffer:
         """
 
         # type check
-        assert isinstance(tool, str), f"`tool` should be string, bet got {type(tool)}"
+        assert isinstance(tool, str), f"`tool` should be string, but got {type(tool)}"
         assert (isinstance(candidates, list) or isinstance(candidates, np.ndarray)), \
             "`candidates` should be a list or numpy.ndarray"
         if len(candidates) > 0:
             assert isinstance(candidates[0], int) or isinstance(candidates[0], np.integer), f"`candidates` should be list of int but got {type(candidates[0])}"
+            # If num_limit is set, only keep the top num_limit candidates
             if self.num_limit is not None:
                 self.memory = list(candidates)[:self.num_limit]
             else:
@@ -104,6 +111,7 @@ class CandidateBuffer:
         else:
             self.memory = []
         
+        # keep track of the tool and candidates length
         self.plans.append((tool, len(candidates)))
 
 

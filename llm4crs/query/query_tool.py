@@ -120,7 +120,12 @@ class QueryTool:
         return output
 
     def rewrite_sql(self, sql: str) -> str:
-        """Rewrite SQL command using fuzzy search"""
+        """
+        Rewrite SQL command using fuzzy search. Looks into the SQL command and 
+        replaces the column names and categorical values with the closest match
+        from the item corpus.
+        """
+        
         sql = re.sub(r'\bFROM\s+(\w+)\s+WHERE', f'FROM {self.item_corpus.name} WHERE', sql, flags=re.IGNORECASE)
         
         # grounding cols

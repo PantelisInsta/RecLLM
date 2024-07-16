@@ -36,11 +36,15 @@ def _pd_type_to_sql_type(col: pd.Series) -> str:
 
 
 class BaseGallery:
+    """
+    Comprehensive implementation of item corpus for a recommendation system. Contains logic for fuzzy search to find rewrite queries
+    using BERT. It provides a method to execute SQL queries on the item corpus and return the results.
+    """
     def __init__(self, fpath: str, column_meaning_file: str, name: str='Item_Information', columns: List[str]=None, sep: str=',', parquet_engine: str='pyarrow', 
                  fuzzy_cols: List[str]=['title'], categorical_cols: List[str]=['tags']) -> None:
         self.fpath = fpath
         self.name = name    # name of the table
-        self.corpus = self._read_file(fpath, columns, sep, parquet_engine)
+        self.corpus = self._read_file(fpath, columns, sep, parquet_engine)  # item corpus is a dataframe
         self.disp_cate_topk: int = 6
         self.disp_cate_total: int = 10
         self._fuzzy_bert_base = "thenlper/gte-base"
@@ -112,6 +116,7 @@ class BaseGallery:
         return len(self.corpus)
 
     def info(self, remove_game_titles: bool=False, query: str=None):
+        """Get detailed table information"""
         prefix = 'Table information:'
         table_name = f"Table Name: {self.name}"
         cols_info = "Column Names, Data Types and Column meaning:"
@@ -144,6 +149,7 @@ class BaseGallery:
         return res
 
     def sample_categoricol_values(self, col_name: str, total_n: int, query: str=None, topk: int=None) -> List:
+        """Uses fuzzy search to sample categorical columns related to a query."""
         # Select topk related tags according to query and sample (total_n-topk) tags
         if query is None:
             result = random.sample(self.categorical_col_values[col_name], k=total_n)
@@ -225,6 +231,7 @@ class BaseGallery:
 
 
     def _read_file(self, fpath: str, columns: List[str]=None, sep: str=',', parquet_engine: str='pyarrow') -> pd.DataFrame:
+        """Read item corpus file. Acceptable formats are csv, tsv, feather and parquet."""
         if fpath.endswith('.csv') or fpath.endswith('.tsv'):
             df = pd.read_csv(fpath, sep=sep, names=columns)
         elif fpath.endswith('.ftr'):
