@@ -230,6 +230,31 @@ class BaseGallery:
         return items
 
 
+    def convert_index_2_id(self, index: Union[int, List[int], np.ndarray], verbose=False) -> Union[int, List[int]]:
+        """Given product index in the instacart database, get product id.
+        
+        Args:
+            - index: product index. Note that the product index must exist in the table.
+            - verbose: whether to print the result 
+
+        Returns:
+            - product id.
+        
+        """
+
+        if isinstance(index, str):
+            result = self.corpus.loc[self.corpus['index'] == index].index.values[0]
+        elif isinstance(index, list) or isinstance(index, np.ndarray):
+            result = self.corpus.loc[self.corpus['index'].isin(index)].index.values
+        else:
+            raise TypeError("Not supported type for `index`.")
+        
+        if verbose:
+            print(f"Index {index} is converted to id {result}.")
+        
+        return result
+
+
     def _read_file(self, fpath: str, columns: List[str]=None, sep: str=',', parquet_engine: str='pyarrow') -> pd.DataFrame:
         """Read item corpus file. Acceptable formats are csv, tsv, feather and parquet."""
         if fpath.endswith('.csv') or fpath.endswith('.tsv'):
