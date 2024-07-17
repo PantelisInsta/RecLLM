@@ -93,28 +93,36 @@ class SQLSearchTool:
 
         sql = re.sub(r'\bFROM\s+(\w+)\s+WHERE', f'FROM {self.item_corpus.name} WHERE', sql, flags=re.IGNORECASE)
         
-        # grounding cols
+        # Grounding sql columns to item corpus columns
+        # Columns for which sql is written
         cols = extract_columns_from_where(sql)
+        # Extract column names from corpus
         existing_cols = set(self.item_corpus.column_meaning.keys())
+        # Store column replacements from fuzzy search
         col_replace_dict = {}
         for col in cols:
+            # If a column is not in the corpus, try to find the closest match
             if col not in existing_cols:
                 mapped_col = self.item_corpus.fuzzy_match(col, 'sql_cols')
                 col_replace_dict[col] = f"{mapped_col}"
+        # Replace the columns in the SQL command
         for k, v in col_replace_dict.items():
             sql = sql.replace(k, v)
 
-        # grounding categorical values
+        # Grounding categorical values within columns
+        # Separate column and categorical value from SQL command
         pattern = r"([a-zA-Z0-9_]+) (?:NOT )?LIKE '\%([^\%]+)\%'" 
         res = re.findall(pattern, sql)
         replace_dict = {}
         for col, value in res:
             if col not in self.item_corpus.fuzzy_engine:
                 continue
+            # Get the closest match for the value
             replace_value = str(self.item_corpus.fuzzy_match(value, col))
             replace_value = replace_value.replace("'", "''")    # escaping string for sqlite
             replace_dict[f"%{value}%"] = f"%{replace_value}%"
 
+        # Replace in the SQL command
         for k, v in replace_dict.items():
             sql = sql.replace(k, v)
 

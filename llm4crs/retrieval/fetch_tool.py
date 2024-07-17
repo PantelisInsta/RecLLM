@@ -1,8 +1,10 @@
 # Tool to retrieve items from instacart feature store
 
 from llm4crs.utils.feature_store import fetch_recommendation_features
+from llm4crs.utils import SentBERTEngine
 
 FEATURES = ['retailer_name', 'subtitle', 'product_ids', 'product_names']
+FEATURE_STORE_QUERIES = None
 
 
 class fetchFeatureStore:
@@ -12,12 +14,22 @@ class fetchFeatureStore:
     and updates the candidate bus with the new candidates.
     """
 
-    def __init__(self, item_corpus, candidate_bus, content_type='substitute', features=FEATURES, retailer_id=12):
+    def __init__(self, item_corpus, candidate_bus, terms=FEATURE_STORE_QUERIES, content_type='substitute',
+                  features=FEATURES, retailer_id=12):
+        
         self.item_corpus = item_corpus # full corpus of items
         self.candidate_bus = candidate_bus # candidate bus to store candidates
         self.content_type = content_type # content type from feature store
         self.features = features    # features to fetch
         self.retailer_id = retailer_id  # retailer
+        self.terms = terms  # contains all search terms in feature store, for fuzzy search if there is no exact term match
+
+        # if terms is not none, define a sentence transformer engine for fuzzy search
+        if terms:
+            self.engine = SentBERTEngine(terms, 
+                                         list(range(len(terms))), 
+                                         model_name="thenlper/gte-base", 
+                                         case_sensitive=False)
 
     def fetch_items(self, term):
         """
@@ -44,7 +56,18 @@ class fetchFeatureStore:
         """
         Updates the candidate bus with new candidates.
         """
+        # If term is not in terms, run fuzzy engine
+        if term not in self.terms:
+            term = self.fuzzy_search(term)
+        # Fetch items from feature store
         indexes = self.fetch_items(term)
         ids = self.item_corpus.convert_index_2_id(indexes)
         # Update candidate bus with push method
         self.candidate_bus.push("Fetch feature store items tool",ids)
+        
+
+    def fuzzy_search(self, term):
+        """
+        Searches for the most similar term in the terms list.
+        """
+        return self.engine(term, topk=1)[0]

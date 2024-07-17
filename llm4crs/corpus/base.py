@@ -241,7 +241,11 @@ class BaseGallery:
             - product id.
         
         """
+        # if index column does not exist in the corpus, return error message
+        if 'index' not in self.corpus.columns:
+            raise_error(ValueError, "Index column does not exist in the corpus.")
 
+        # convert index to id
         if isinstance(index, str):
             result = self.corpus.loc[self.corpus['index'] == index].index.values[0]
         elif isinstance(index, list) or isinstance(index, np.ndarray):
@@ -249,6 +253,7 @@ class BaseGallery:
         else:
             raise TypeError("Not supported type for `index`.")
         
+        # print the result
         if verbose:
             print(f"Index {index} is converted to id {result}.")
         

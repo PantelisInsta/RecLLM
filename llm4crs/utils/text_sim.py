@@ -8,6 +8,10 @@ from faiss import IndexFlatIP
 from sentence_transformers import SentenceTransformer
 
 class SentBERTEngine:
+    """
+    A wrapper for SentenceTransformer to encode the corpus and query, and search the most similar items.
+    The corpus is the list names in a dataframe column, and the index is the list of ids in the same dataframe.
+    """
     def __init__(self, corpus: np.ndarray, index: np.ndarray, case_sensitive: bool=False, model_name: str='thenlper/gte-base', keep_embedding: bool=False, model=None):
         self.corpus = corpus
         self.index = index

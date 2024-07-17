@@ -399,6 +399,7 @@ class CRSAgentPlanFirstOpenAI:
     # Customize system prompt to contain all information about what tools are 
     # available and what they do
     def setup_prompts(self, tools: List[Tool]):
+        # Dictionary of tool name and description fed to the system prompt
         tools_desc = "\n".join([f"{tool.name}: {tool.desc}" for tool in self._tools])
         tool_names = "[" + ", ".join([f"{tool.name}" for tool in self._tools]) + "]"
         template = SYSTEM_PROMPT_PLAN_FIRST.format(
