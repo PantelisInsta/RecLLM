@@ -15,21 +15,21 @@ TOOL_NAMES = {
 
 
 CANDIDATE_STORE_TOOL_DESC = """
-The tool is useful to save candidate {item}s into buffer as the initial candidates, following tools would filter or ranking {item}s from those candidates. \
-For example, "Please select the most suitable {item} from those {item}s". \
-Don't use this tool when the user hasn't specified that they want to select from a specific set of {item}s. \
+The tool is useful to save candidate {item} into buffer as the initial candidates, following tools would filter or ranking {item} from those candidates. \
+For example, "Please select the most suitable {item} from these {item}". \
+Don't use this tool when the user hasn't specified that they want to select from a specific set of {item}. \
 The input of the tool should be a string of {item} names split by two ';', such as "{ITEM}1;; {ITEM}2;; {ITEM}3". 
 """
 
 
 LOOK_UP_TOOL_DESC = """
-The tool is used to look up {item}'s detailed information in a {item} information table (including statistical information), like number of {item}s, description of {item}s, price and so on. \
+The tool is used to look up {item}'s detailed information in a {item} information table (including statistical information), like number of {item}, description of {item}, price and so on. \
 
 The input of the tools should be a SQL command (in one line) converted from the search query, which would be used to search information in {item} information table. \
 You should try to select as less columns as you can to get the necessary information. \
 Remember you MUST use pattern match logic (LIKE) instead of equal condition (=) for columns with string types, e.g. "title LIKE '%xxx%'". \
 
-For example, if asking for "how many xxx {item}s?", you should use "COUNT()" to get the correct number. If asking for "description of xxx", you should use "SELECT {item}_description FROM xxx WHERE xxx". \
+For example, if asking for "how many xxx {item}?", you should use "COUNT()" to get the correct number. If asking for "description of xxx", you should use "SELECT {item}_description FROM xxx WHERE xxx". \
 
 The tool can NOT give recommendations. DO NOT SELECT id information!
 """
@@ -44,6 +44,12 @@ The input of the tool should be a one-line SQL SELECT command converted from har
 4. select all {item}s that meet the conditions, do not use the LIMIT keyword;
 5. try to use OR instead of AND;
 6. use given related values for categorical columns instead of human's description.
+"""
+
+FEATURE_STORE_FILTER_TOOL_DESC = """
+The tool is a hard-condition {item} filtering tool. The tool is useful when the user wants {item} with some hard conditions on {item} properties. \
+The input is a string query that is used to fetch the features of the {item} from the Instacart Feature Store. The query should NOT be a SQL command. \
+You should use your logic to extract the user intent from the message, for example if the user says "I would like some eggs", the query should be "eggs". \
 """
 
 
@@ -83,6 +89,7 @@ _TOOL_DESC = {
     "CANDIDATE_STORE_TOOL_DESC": CANDIDATE_STORE_TOOL_DESC,
     "LOOK_UP_TOOL_DESC": LOOK_UP_TOOL_DESC,
     "HARD_FILTER_TOOL_DESC": HARD_FILTER_TOOL_DESC,
+    "FEATURE_STORE_FILTER_TOOL_DESC": FEATURE_STORE_FILTER_TOOL_DESC,
     "SOFT_FILTER_TOOL_DESC": SOFT_FILTER_TOOL_DESC,
     "RANKING_TOOL_DESC": RANKING_TOOL_DESC,
     "MAP_TOOL_DESC": MAP_TOOL_DESC,
@@ -92,7 +99,7 @@ OVERALL_TOOL_DESC = """
 There are several tools to use:
 - {BufferStoreTool}: {CANDIDATE_STORE_TOOL_DESC}
 - {LookUpTool}: {LOOK_UP_TOOL_DESC}
-- {HardFilterTool}: {HARD_FILTER_TOOL_DESC}
+- {HardFilterTool}: {FEATURE_STORE_FILTER_TOOL_DESC}
 - {SoftFilterTool}: {SOFT_FILTER_TOOL_DESC}
 - {RankingTool}: {RANKING_TOOL_DESC}
 - {MapTool}: {MAP_TOOL_DESC}
@@ -112,7 +119,7 @@ There are several tools to use:
 
 
 TOOLBOX_DESC = """
-The tool is a big tool box consisting of all tools metioned above. The tool box is used to execute tools when plan is maked. 
+This tool is a big tool box consisting of all tools metioned above. The tool box is used to execute tools when a plan is made. 
 The input is a List of Dict, indicating the tool using plan and input to each tool. There are two keys "tool_name" and "input" in Dict. 
 The format should be like: "[{'tool_name': TOOL-1, 'input': INPUT-1}, ..., {'tool_name': TOOL-N, 'input': INPUT-N} ]".
 """

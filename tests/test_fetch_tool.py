@@ -3,7 +3,7 @@ import setup_env
 
 # import relevant modules
 from llm4crs.utils.feature_store import fetch_recommendation_features
-from llm4crs.retrieval.fetch_tool import fetchFeatureStore
+from llm4crs.retrieval.fetch_tool import FetchFeatureStoreItemsTool
 from llm4crs.buffer import CandidateBuffer
 from llm4crs.corpus import BaseGallery
 
@@ -23,7 +23,9 @@ item_corpus = BaseGallery(
 candidate_buffer = CandidateBuffer(item_corpus)
 
 # Initialize the fetchFeatureStore tool
-fetch_tool = fetchFeatureStore(item_corpus, candidate_buffer)
+fetch_tool = FetchFeatureStoreItemsTool('FeatureStoreItemTool',
+                                        item_corpus, candidate_buffer,
+                                        'Fetches items from the feature store')
 
 # Fetch items from the feature store
 term = "milk"

@@ -18,7 +18,7 @@ from llm4crs.environ_variables import *
 from llm4crs.mapper import MapTool
 from llm4crs.prompt import *
 from llm4crs.ranking import RecModelTool
-from llm4crs.retrieval import SimilarItemTool, SQLSearchTool
+from llm4crs.retrieval import SimilarItemTool, SQLSearchTool, FetchFeatureStoreItemsTool
 from llm4crs.query import QueryTool
 from llm4crs.utils import FuncToolWrapper
 
@@ -127,6 +127,13 @@ parser.add_argument(
     help="Reply style of the assistent. If detailed, details about the recommendation would be give. Otherwise, only item names would be given.",
 )
 
+# use feature store filter tool instead of hard filter tool
+parser.add_argument(
+    "--feature_store_filter",
+    action="store_true",
+    help="Use feature store filter tool instead of hard filter tool"
+)
+
 args = parser.parse_args()
 
 # Define map that replaces {item} for domain specific item
@@ -160,6 +167,25 @@ candidate_buffer = CandidateBuffer(item_corpus, num_limit=args.max_candidate_num
 # Define tools that are available to the LLM orchestrator. Which tools are available depends
 # on the arguments passed to the script. Tool prompts are imported from prompt.py 
 # The key of dict here is used to map to the prompt
+
+# Pick which hard filter tool to use
+
+if args.feature_store_filter:
+    hard_filter_tool = FetchFeatureStoreItemsTool(
+        name=tool_names["HardFilterTool"],
+        item_corpus=item_corpus,
+        buffer=candidate_buffer,
+        desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map),
+    )
+else:
+    hard_filter_tool = SQLSearchTool(
+        name=tool_names["HardFilterTool"],
+        desc=HARD_FILTER_TOOL_DESC.format(**domain_map),
+        item_corpus=item_corpus,
+        buffer=candidate_buffer,
+        max_candidates_num=args.max_candidate_num,
+    )
+
 tools = {
     "BufferStoreTool": FuncToolWrapper(
         func=candidate_buffer.init_candidates,
@@ -172,13 +198,8 @@ tools = {
         item_corpus=item_corpus,
         buffer=candidate_buffer,
     ),
-    "HardFilterTool": SQLSearchTool(
-        name=tool_names["HardFilterTool"],
-        desc=HARD_FILTER_TOOL_DESC.format(**domain_map),
-        item_corpus=item_corpus,
-        buffer=candidate_buffer,
-        max_candidates_num=args.max_candidate_num,
-    ),
+    "HardFilterTool": hard_filter_tool
+    ,
     "SoftFilterTool": SimilarItemTool(
         name=tool_names["SoftFilterTool"],
         desc=SOFT_FILTER_TOOL_DESC.format(**domain_map),

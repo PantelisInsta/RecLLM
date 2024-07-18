@@ -7,22 +7,34 @@ FEATURES = ['retailer_name', 'subtitle', 'product_ids', 'product_names']
 FEATURE_STORE_QUERIES = None
 
 
-class fetchFeatureStore:
+class FetchFeatureStoreItemsTool:
     """
     Defines a tool to fetch items from the feature store. The tool receives a search term,
     fetches items from the feature store, converts the feature store indexes to item ids,
     and updates the candidate bus with the new candidates.
+
+    Args:
+        name (str): The name of the tool.
+        item_corpus (BaseGallery): The corpus of items.
+        buffer (CandidateBuffer): The candidate bus to store candidates.
+        desc (str): The description of the tool.
+        terms (list): The list of search terms in the feature store.
+        content_type (str): The content type from the feature store.
+        features (list): The features to fetch.
+        retailer_id (int): The retailer id.
     """
 
-    def __init__(self, item_corpus, candidate_bus, terms=FEATURE_STORE_QUERIES, content_type='substitute',
+    def __init__(self, name, item_corpus, buffer, desc, terms=FEATURE_STORE_QUERIES, content_type='substitute',
                   features=FEATURES, retailer_id=12):
         
-        self.item_corpus = item_corpus # full corpus of items
-        self.candidate_bus = candidate_bus # candidate bus to store candidates
-        self.content_type = content_type # content type from feature store
-        self.features = features    # features to fetch
-        self.retailer_id = retailer_id  # retailer
-        self.terms = terms  # contains all search terms in feature store, for fuzzy search if there is no exact term match
+        self.name = name
+        self.desc = desc
+        self.item_corpus = item_corpus
+        self.buffer = buffer
+        self.content_type = content_type
+        self.features = features
+        self.retailer_id = retailer_id
+        self.terms = terms 
 
         # if terms is not none, define a sentence transformer engine for fuzzy search
         if terms:
@@ -57,13 +69,16 @@ class fetchFeatureStore:
         Updates the candidate bus with new candidates.
         """
         # If term is not in terms, run fuzzy engine
-        if term not in self.terms:
+        if self.terms is not None and term not in self.terms:
             term = self.fuzzy_search(term)
         # Fetch items from feature store
         indexes = self.fetch_items(term)
         ids = self.item_corpus.convert_index_2_id(indexes)
         # Update candidate bus with push method
-        self.candidate_bus.push("Fetch feature store items tool",ids)
+        self.buffer.push("Fetch feature store items tool",ids)
+        
+        # Return message with ids
+        return f"Here are candidates id searched with the term: [{','.join(map(str, ids))}]."
         
 
     def fuzzy_search(self, term):
