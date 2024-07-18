@@ -551,8 +551,12 @@ class CRSAgentPlanFirstOpenAI:
         
         # Format prompt
         prompt = prompt.format(**prompt_map)
+        # time the openai call
+        start = time.time()
         # Call the agent to generate the plan
         llm_output = self.agent.call(user_prompt=prompt)
+        end = time.time()
+        logger.debug(f"OpenAI API call latency: {end - start} s.")
         # Parse the llm output to interpret it
         finish, info = self._parse_llm_output(llm_output)
 
@@ -564,6 +568,9 @@ class CRSAgentPlanFirstOpenAI:
             self._plan_record_cache['traj'].append(
                 {"role": "plan", "content": llm_output}
             )
+
+            # use save_plan method to save plan to file
+            self.save_plan(0)
 
         if finish:
             # if the llm provided a clear response, return response

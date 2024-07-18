@@ -260,6 +260,7 @@ bot = AgentType(
     reflection_limits=args.reflection_limits,  # reflexion
     verbose=True,
     reply_style=args.reply_style,  # only supported for CRSAgentPlanFirstOpenAI
+    planning_recording_file='plans/plan.json'  # planning recording file
 )
 
 logger.remove()
