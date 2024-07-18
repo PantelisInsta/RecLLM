@@ -570,7 +570,7 @@ class CRSAgentPlanFirstOpenAI:
             )
 
             # use save_plan method to save plan to file
-            self.save_plan(0)
+            self.save_plan(reward=0)
 
         if finish:
             # if the llm provided a clear response, return response

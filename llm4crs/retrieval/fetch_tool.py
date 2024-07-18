@@ -1,11 +1,10 @@
-# Tool to retrieve items from instacart feature store
+import pandas as pd
+import numpy as np
 
 from llm4crs.utils.feature_store import fetch_recommendation_features
 from llm4crs.utils import SentBERTEngine
 
 FEATURES = ['retailer_name', 'subtitle', 'product_ids', 'product_names']
-FEATURE_STORE_QUERIES = None
-
 
 class FetchFeatureStoreItemsTool:
     """
@@ -18,13 +17,13 @@ class FetchFeatureStoreItemsTool:
         item_corpus (BaseGallery): The corpus of items.
         buffer (CandidateBuffer): The candidate bus to store candidates.
         desc (str): The description of the tool.
-        terms (list): The list of search terms in the feature store.
+        terms (str): Directory to a csv file containing feature store terms for fuzzy search.
         content_type (str): The content type from the feature store.
         features (list): The features to fetch.
         retailer_id (int): The retailer id.
     """
 
-    def __init__(self, name, item_corpus, buffer, desc, terms=FEATURE_STORE_QUERIES, content_type='substitute',
+    def __init__(self, name, item_corpus, buffer, desc, terms=None, content_type='substitute',
                   features=FEATURES, retailer_id=12):
         
         self.name = name
@@ -34,12 +33,16 @@ class FetchFeatureStoreItemsTool:
         self.content_type = content_type
         self.features = features
         self.retailer_id = retailer_id
-        self.terms = terms 
 
         # if terms is not none, define a sentence transformer engine for fuzzy search
         if terms:
-            self.engine = SentBERTEngine(terms, 
-                                         list(range(len(terms))), 
+            # terms is a directory to a csv file. load that file
+            terms = pd.read_csv(terms)
+            # convert terms to ndarray
+            self.terms = np.array(terms).flatten()
+            
+            self.engine = SentBERTEngine(self.terms, 
+                                         list(range(len(self.terms))), 
                                          model_name="thenlper/gte-base", 
                                          case_sensitive=False)
 
@@ -85,4 +88,4 @@ class FetchFeatureStoreItemsTool:
         """
         Searches for the most similar term in the terms list.
         """
-        return self.engine(term, topk=1)[0]
+        return self.engine(term,topk=1,return_doc=True)[0]

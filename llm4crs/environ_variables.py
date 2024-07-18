@@ -16,7 +16,9 @@ GAME_INFO_FILE = os.path.abspath(os.path.join(__domain_resource_dir, environ['GA
 TABLE_COL_DESC_FILE = os.path.abspath(os.path.join(__domain_resource_dir, environ['TABLE_COL_DESC_FILE']))
 MODEL_CKPT_FILE = os.path.abspath(os.path.join(__domain_resource_dir, environ['MODEL_CKPT_FILE']))
 ITEM_SIM_FILE = os.path.abspath(os.path.join(__domain_resource_dir, environ['ITEM_SIM_FILE']))
+SEARCH_TERMS_FILE = os.path.abspath(os.path.join(__domain_resource_dir, environ['SEARCH_TERMS_FILE']))
 USE_COLS = environ['USE_COLS']
 CATEGORICAL_COLS = environ['CATEGORICAL_COLS']
 
-__all__ = ['UNIREC_DIR', 'GAME_INFO_FILE', 'TABLE_COL_DESC_FILE', 'MODEL_CKPT_FILE', 'ITEM_SIM_FILE', 'USE_COLS', 'CATEGORICAL_COLS']
+__all__ = ['UNIREC_DIR', 'GAME_INFO_FILE', 'TABLE_COL_DESC_FILE', 'MODEL_CKPT_FILE',
+            'ITEM_SIM_FILE', 'SEARCH_TERMS_FILE', 'USE_COLS', 'CATEGORICAL_COLS']

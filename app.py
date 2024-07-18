@@ -176,6 +176,7 @@ if args.feature_store_filter:
         item_corpus=item_corpus,
         buffer=candidate_buffer,
         desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map),
+        terms=SEARCH_TERMS_FILE,
     )
 else:
     hard_filter_tool = SQLSearchTool(
