@@ -27,9 +27,9 @@ def fetch_recall_rank_features(term, retailer_id, features):
     return df
 
 
-def fetch_recommendation_features(term, retailer_id, content_type, features):
+def fetch_retrieval_features(term, retailer_id, content_type, features):
     """
-    Fetches recommendation features from the feature store for a given
+    Fetches retrieval features from the feature store for a given
     search term, retailer_id and content_type.
 
     Args:
@@ -41,7 +41,7 @@ def fetch_recommendation_features(term, retailer_id, content_type, features):
     
     builders = []
     feature_builder = feature_store_utils.get_builder(
-            shard_entity_names=['retailer_id','term', 'content_type'],
+            shard_entity_names=['retailer_id','term','content_type'],
             shard_entity_values=[[retailer_id,term,content_type]],
             features=features,
             source_name='search_llm_agent_content_query_to_product_mapping',

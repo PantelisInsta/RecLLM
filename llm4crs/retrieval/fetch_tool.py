@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from llm4crs.utils.feature_store import fetch_recommendation_features
+from llm4crs.utils.feature_store import fetch_retrieval_features
 from llm4crs.utils import SentBERTEngine
 
 FEATURES = ['retailer_name', 'subtitle', 'product_ids', 'product_names']
@@ -45,6 +45,8 @@ class FetchFeatureStoreItemsTool:
                                          list(range(len(self.terms))), 
                                          model_name="thenlper/gte-base", 
                                          case_sensitive=False)
+        else:
+            self.terms = None
 
     def fetch_items(self, term):
         """
@@ -53,7 +55,7 @@ class FetchFeatureStoreItemsTool:
         """
 
         # Get dataframe of items
-        df = fetch_recommendation_features(term, 12, 'substitute', FEATURES)
+        df = fetch_retrieval_features(term, 12, 'substitute', FEATURES)
 
         # Extract product indexes from product_ids column and convert to list of integers
         product_indexes = list(df['product_ids'].values[0])
@@ -69,7 +71,7 @@ class FetchFeatureStoreItemsTool:
     
     def run(self, term):
         """
-        Updates the candidate bus with new candidates.
+        Updates the candidate bus with new candidates from feature store.
         """
         # If term is not in terms, run fuzzy engine
         if self.terms is not None and term not in self.terms:

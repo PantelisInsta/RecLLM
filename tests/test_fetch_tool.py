@@ -2,7 +2,6 @@
 import setup_env
 
 # import relevant modules
-from llm4crs.utils.feature_store import fetch_recommendation_features
 from llm4crs.retrieval.fetch_tool import FetchFeatureStoreItemsTool
 from llm4crs.buffer import CandidateBuffer
 from llm4crs.corpus import BaseGallery
