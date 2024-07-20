@@ -6,8 +6,6 @@ from llm4crs.retrieval.fetch_tool import FetchFeatureStoreItemsTool
 from llm4crs.buffer import CandidateBuffer
 from llm4crs.corpus import BaseGallery
 
-# Set up environment variables that define data paths
-from llm4crs.environ_variables import *
 
 # Load corpus of items
 item_corpus = BaseGallery(

@@ -15,6 +15,11 @@ from unirec.utils import general
 
 
 class RecModelTool:
+    """
+    Tool that ranks candidates based on a recommendation model. It has three ranking schemas: 'popularity', 'preference', 'similarity', and two
+    modes: 'accuracy' and 'diversity'. The 'accuracy' mode returns the top N items with the highest scores, while the 'diversity' mode returns N
+    items sampled from the candidates based on the scores. The tool can utilize previous user interactions to generate recommendations.
+    """
     def __init__(
         self,
         name: str,
@@ -57,6 +62,7 @@ class RecModelTool:
             self.buffer.track(self.name, inputs, info)
             return info
 
+        # Extract the schema, rec_num, prefer, and unwanted from the inputs.
         schema = inputs.get("schema", "popularity")
         rec_num = self.rec_num
         prefer = inputs.get("prefer", [])
@@ -71,6 +77,7 @@ class RecModelTool:
         else:
             info += "\n"
 
+        # Case-specific logic for ranking recommendations.
         try:
             if (len(prefer)) > 0:
                 prefer = self.item_corpus.fuzzy_match(prefer, "title")

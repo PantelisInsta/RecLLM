@@ -70,7 +70,7 @@ The input of the tool should be a json string, which may consist of three keys: 
 "schema" represents ranking schema, optional choices: "popularity", "similarity" and "preference", indicating rank by {item} popularity, rank by similarity, rank by human preference ("prefer" {item}s). \
 The "schema" depends on previous tool using and human preference. If "prefer" info here not empty, "preference" schema should be used. If similarity filtering tool is used before, prioritize using "similarity" except human want popular {item}s.
 "prefer" represents {item} names that human has enjoyed or human has interacted with before (human's history), which should be an array of {item} titles. Keywords: "used to do", "I like", "prefer".
-"unwanted" represents {item} names that human doesn't like or doesn't want to see in next conversations, which should be an array of {item} titles. Keywords: "don't like", "boring", "interested in". 
+"unwanted" represents {item} names that human doesn't like or doesn't want to see in next conversations, which should be an array of {item} titles. Keywords: "don't like", "boring", "not interested in". 
 "prefer" and "unwanted" {item}s should be extracted from human request and previous conversations. Only {item} names are allowed to appear in the input. \
 The human's feedback for you recommendation in conversation history could be regard as "prefer" or "unwanted", like "I have tried those items you recommend" or "I don't like those".
 Only when at least one of "prefer" and "unwanted" is not empty, the tool could be used. If no "prefer" info, {item}s would be ranked based on the popularity.\
