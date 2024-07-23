@@ -17,7 +17,7 @@ from llm4crs.critic import Critic
 from llm4crs.environ_variables import *
 from llm4crs.mapper import MapTool
 from llm4crs.prompt import *
-from llm4crs.ranking import RecModelTool
+from llm4crs.ranking import RecModelTool, RankFeatureStoreTool
 from llm4crs.retrieval import SimilarItemTool, SQLSearchTool, FetchFeatureStoreItemsTool
 from llm4crs.query import QueryTool
 from llm4crs.utils import FuncToolWrapper
@@ -127,11 +127,11 @@ parser.add_argument(
     help="Reply style of the assistent. If detailed, details about the recommendation would be give. Otherwise, only item names would be given.",
 )
 
-# use feature store filter tool instead of hard filter tool
+# use feature store tools for hard filtering and ranking
 parser.add_argument(
-    "--feature_store_filter",
+    "--feature_store_tools",
     action="store_true",
-    help="Use feature store filter tool instead of hard filter tool"
+    help="Use feature store tools for hard filtering and ranking",
 )
 
 args = parser.parse_args()
@@ -170,13 +170,20 @@ candidate_buffer = CandidateBuffer(item_corpus, num_limit=args.max_candidate_num
 
 # Pick which hard filter tool to use
 
-if args.feature_store_filter:
+if args.feature_store_tools:
     hard_filter_tool = FetchFeatureStoreItemsTool(
         name=tool_names["HardFilterTool"],
         item_corpus=item_corpus,
         buffer=candidate_buffer,
         desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map),
         terms=SEARCH_TERMS_FILE,
+    )
+    ranking_tool = RankFeatureStoreTool(
+        name=tool_names["RankingTool"],
+        desc=FEATURE_STORE_RANK_TOOL_DESC.format(**domain_map),
+        item_corpus=item_corpus,
+        buffer=candidate_buffer,
+        fetch_tool=hard_filter_tool,
     )
 else:
     hard_filter_tool = SQLSearchTool(
@@ -185,6 +192,14 @@ else:
         item_corpus=item_corpus,
         buffer=candidate_buffer,
         max_candidates_num=args.max_candidate_num,
+    )
+    ranking_tool = RecModelTool(
+        name=tool_names["RankingTool"],
+        desc=RANKING_TOOL_DESC.format(**domain_map),
+        model_fpath=MODEL_CKPT_FILE,
+        item_corpus=item_corpus,
+        buffer=candidate_buffer,
+        rec_num=args.rank_num,
     )
 
 tools = {
@@ -209,14 +224,8 @@ tools = {
         buffer=candidate_buffer,
         top_ratio=args.similar_ratio,
     ),
-    "RankingTool": RecModelTool(
-        name=tool_names["RankingTool"],
-        desc=RANKING_TOOL_DESC.format(**domain_map),
-        model_fpath=MODEL_CKPT_FILE,
-        item_corpus=item_corpus,
-        buffer=candidate_buffer,
-        rec_num=args.rank_num,
-    ),
+    "RankingTool": ranking_tool
+    ,
     "MapTool": MapTool(
         name=tool_names["MapTool"],
         desc=MAP_TOOL_DESC.format(**domain_map),

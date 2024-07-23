@@ -77,13 +77,13 @@ class RankFeatureStoreTool:
 
     # Run the tool
 
-    def run(self, term=None):
+    def run(self, term='null'):
         """
         Updates the candidate bus with recommended candidates from feature store.
         """
 
         # if a term is not provided use the fetch tool term
-        if term is None:
+        if term == 'null':
             term = self.fetch_tool.term
         self.term = term
 

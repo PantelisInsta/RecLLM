@@ -77,6 +77,11 @@ Only when at least one of "prefer" and "unwanted" is not empty, the tool could b
 Do not fake {item}s.
 """
 
+FEATURE_STORE_RANK_TOOL_DESC = """
+The tool is useful to filter {item} for recommendation and refine {item} order, i.e. rank them according to feature store information. The tools input should be 'null', and the tool \
+ should typically be used after the fetch tool.
+"""
+
 MAP_TOOL_DESC = """
 The tool is useful when you want to convert {item} id to {item} title before showing {item}s to human. \
 The tool is able to get stored {item}s in the buffer and randomly select a specific number of {item}s from the buffer. \
@@ -92,6 +97,7 @@ _TOOL_DESC = {
     "FEATURE_STORE_FILTER_TOOL_DESC": FEATURE_STORE_FILTER_TOOL_DESC,
     "SOFT_FILTER_TOOL_DESC": SOFT_FILTER_TOOL_DESC,
     "RANKING_TOOL_DESC": RANKING_TOOL_DESC,
+    "FEATURE_STORE_RANK_TOOL_DESC": FEATURE_STORE_RANK_TOOL_DESC,
     "MAP_TOOL_DESC": MAP_TOOL_DESC,
 }
 
@@ -101,7 +107,7 @@ There are several tools to use:
 - {LookUpTool}: {LOOK_UP_TOOL_DESC}
 - {HardFilterTool}: {FEATURE_STORE_FILTER_TOOL_DESC}
 - {SoftFilterTool}: {SOFT_FILTER_TOOL_DESC}
-- {RankingTool}: {RANKING_TOOL_DESC}
+- {RankingTool}: {FEATURE_STORE_RANK_TOOL_DESC}
 - {MapTool}: {MAP_TOOL_DESC}
 """.format(
     **TOOL_NAMES, **_TOOL_DESC
