@@ -49,8 +49,16 @@ The input of the tool should be a one-line SQL SELECT command converted from har
 FEATURE_STORE_FILTER_TOOL_DESC = """
 The tool is a hard-condition {item} filtering tool. The tool is useful when the user wants {item} with some hard conditions on {item} properties. \
 The input is a string query that is used to fetch the features of the {item} from the Instacart Feature Store. The query should NOT be a SQL command. \
-You should use your logic to extract the user intent from the message, for example if the user says "I would like some eggs", the query should be "eggs". \
+You should use your logic to extract the user intent from the message. If the user does not specify details, the query should be simple, 
+for example if the user says "I would like some grapes", the query should be "grapes". If the user asks for a specific attribute, for example if they \
+say 'I am looking for gluten-free bread options', the query should be 'gluten-free bread'. If the user asks for an attribute that is not specific, \
+for example 'I would like some healthy breakfast' you should interpret it based on the context, for example 'low-fat breakfast'.
 """
+'''
+You should make sure to extract the specific item the user wants, including any \
+any primare attributes like 'organic', 'gluten-free', 'low-fat', etc. You should interpret which attributes are relevant for the item, for example 'healthy' 
+could mean 'low-fat', 'organic' or 'cage-free', depending on the situation.
+'''
 
 
 SOFT_FILTER_TOOL_DESC = """

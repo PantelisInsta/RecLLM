@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from loguru import logger
 
 from llm4crs.utils.feature_store import fetch_retrieval_features
 from llm4crs.utils import SentBERTEngine
@@ -73,23 +74,31 @@ class FetchFeatureStoreItemsTool:
         """
         Updates the candidate bus with new candidates from feature store.
         """
+        info = ""
         # If term is not in terms, run fuzzy engine
         if self.terms is not None and term not in self.terms:
-            term = self.fuzzy_search(term)
+            new_term = self.fuzzy_search(term)
+            info += f"System: Fuzzy search replaced term '{term}' with '{new_term}' in the retrieval tool.\n"
         # Save term
-        self.term = term
+        self.term = new_term
         # Fetch items from feature store
-        indexes = self.fetch_items(term)
+        indexes = self.fetch_items(self.term)
         ids = self.item_corpus.convert_index_2_id(indexes)
         # Update candidate bus with push method
         self.buffer.push("Fetch feature store items tool",ids)
-        
+        # update info
+        info += f"Here are candidates id searched with the term: [{','.join(map(str, ids))}]."
+
         # Return message with ids
-        return f"Here are candidates id searched with the term: [{','.join(map(str, ids))}]."
-        
+        return info        
 
     def fuzzy_search(self, term):
         """
         Searches for the most similar term in the terms list.
         """
-        return self.engine(term,topk=1,return_doc=True)[0]
+
+        logger.debug(f"Rewrite search term: {term}")
+        new_term = self.engine(term,topk=1,return_doc=True)[0]
+        logger.debug(f"New term: {new_term}")
+
+        return new_term
