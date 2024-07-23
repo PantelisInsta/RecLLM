@@ -76,6 +76,8 @@ class FetchFeatureStoreItemsTool:
         # If term is not in terms, run fuzzy engine
         if self.terms is not None and term not in self.terms:
             term = self.fuzzy_search(term)
+        # Save term
+        self.term = term
         # Fetch items from feature store
         indexes = self.fetch_items(term)
         ids = self.item_corpus.convert_index_2_id(indexes)

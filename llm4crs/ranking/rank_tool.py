@@ -15,28 +15,32 @@ class RankFeatureStoreTool:
         desc (str): The description of the tool.
         item_corpus (BaseGallery): The corpus of items.
         buffer (CandidateBuffer): The candidate bus to store candidates.
+        fetch_tool (class): The tool used for fetching items.
         features (list): The features to fetch.
         retailer_id (int): The retailer id.
+        top_k (int): The number of top recommendations to keep.
     """
         
-    def __init__(self, name, desc, item_corpus, buffer, top_k=5, features=['ITEMS'], retailer_id=12):
+    def __init__(self, name, desc, item_corpus, buffer, fetch_tool, top_k=5,
+                  features=['ITEMS'], retailer_id=12):
         
         self.name = name
         self.desc = desc
         self.item_corpus = item_corpus
         self.buffer = buffer
+        self.fetch_tool = fetch_tool
         self.features = features
         self.retailer_id = retailer_id
         self.top_k = top_k
 
-    def fetch_rank_items(self, term):
+    def fetch_rank_items(self):
         """
         Fetches items from the feature store for a given search term.
         Returns a list of feature store product indexes.
         """
 
         # Get data
-        rank = fetch_recall_rank_features(term,retailer_id=self.retailer_id,features=self.features)
+        rank = fetch_recall_rank_features(self.term,retailer_id=self.retailer_id,features=self.features)
         data = list(rank['ITEMS'].values[0])
 
         # Parse data to extract items
@@ -73,13 +77,18 @@ class RankFeatureStoreTool:
 
     # Run the tool
 
-    def run(self, term):
+    def run(self, term=None):
         """
         Updates the candidate bus with recommended candidates from feature store.
         """
 
+        # if a term is not provided use the fetch tool term
+        if term is None:
+            term = self.fetch_tool.term
+        self.term = term
+
         # Fetch items from rank feature store
-        self.fetch_rank_items(term)
+        self.fetch_rank_items()
 
         # Filter items to make sure they are in the candidate bus
         self.filter_rank_items()
@@ -94,22 +103,3 @@ class RankFeatureStoreTool:
 
         # Return message with ids
         return f"Here are the recommended candidate ids: [{','.join(map(str, ids))}]."
-
-
-        '''
-
-        # Get dataframe of items
-        df = fetch_ranking_features(term, 12, 'substitute', FEATURES)
-
-        # Extract product indexes from product_ids column and convert to list of integers
-        product_indexes = df['product_ids'].tolist()
-
-        # Filter out items that are not in the candidate bus
-        product_indexes = [idx for idx in product_indexes if idx in self.buffer]
-
-        # Pick top 10 items
-        product_indexes = product_indexes[:10]
-
-        # Update the candidate bus with the new candidates
-        self.buffer.update(product_indexes)
-        '''
