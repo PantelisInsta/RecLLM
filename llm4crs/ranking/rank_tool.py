@@ -70,6 +70,9 @@ class RankFeatureStoreTool:
         # make dataframe
         self.items_rank = pd.DataFrame(parsed_data)
 
+        # remove duplicate products
+        self.items_rank = self.items_rank.drop_duplicates(subset='product_id')
+
     # Check which items are in the candidate bus, and only keep those
     def filter_rank_items(self):
         """
@@ -81,10 +84,13 @@ class RankFeatureStoreTool:
         product_indexes = self.items_rank['product_id'].tolist()
 
         # Convert from instacart product IDs to internal product IDs using the corpus
-        ids = [self.item_corpus.convert_index_2_id(idx) for idx in product_indexes] 
+        ids = [self.item_corpus.convert_index_2_id(idx) for idx in product_indexes]
 
         # Add ids list to the self.items_rank dataframe
         self.items_rank['id'] = ids
+
+        # Remove rows with None as id
+        self.items_rank = self.items_rank.dropna(subset=['id'])
 
         # Filter out items that are not in the candidate bus
         ids = [idx for idx in ids if idx in self.buffer.memory]
@@ -122,6 +128,8 @@ class RankFeatureStoreTool:
 
         # Update the candidate bus with the new candidates
         ids = self.items_rank['id'].tolist()
+        # convert ids to list of integers
+        ids = [int(x) for x in ids]
         self.buffer.push("Feature store ranking tool",ids)
 
         # Return message with ids

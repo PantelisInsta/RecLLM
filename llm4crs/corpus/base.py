@@ -249,7 +249,10 @@ class BaseGallery:
         if isinstance(index, str):
             result = self.corpus.loc[self.corpus['index'] == index].index.values[0]
         elif isinstance(index, int):
-            result = self.corpus.loc[self.corpus['index'] == index].index.values[0]
+            try:
+                result = self.corpus.loc[self.corpus['index'] == index].index.values[0]
+            except:
+                return None
         elif isinstance(index, list) or isinstance(index, np.ndarray):
             result = self.corpus.loc[self.corpus['index'].isin(index)].index.values
         else:
