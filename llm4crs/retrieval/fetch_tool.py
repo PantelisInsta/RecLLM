@@ -79,8 +79,10 @@ class FetchFeatureStoreItemsTool:
         if self.terms is not None and term not in self.terms:
             new_term = self.fuzzy_search(term)
             info += f"System: Fuzzy search replaced term '{term}' with '{new_term}' in the retrieval tool.\n"
-        # Save term
-        self.term = new_term
+            self.term = new_term
+        else:
+            self.term = term
+        
         # Fetch items from feature store
         indexes = self.fetch_items(self.term)
         ids = self.item_corpus.convert_index_2_id(indexes)
@@ -97,7 +99,7 @@ class FetchFeatureStoreItemsTool:
         Searches for the most similar term in the terms list.
         """
 
-        logger.debug(f"Rewrite search term: {term}")
+        logger.debug(f"Retrieval tool rewrite search term: {term}")
         new_term = self.engine(term,topk=1,return_doc=True)[0]
         logger.debug(f"New term: {new_term}")
 

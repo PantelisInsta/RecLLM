@@ -1,7 +1,10 @@
 # Ranking tool based on instacart feature store
 
 from llm4crs.utils.feature_store import fetch_recall_rank_features
+from llm4crs.utils import SentBERTEngine
+from loguru import logger
 import pandas as pd
+import numpy as np
 import ast
 
 class RankFeatureStoreTool:
@@ -21,7 +24,7 @@ class RankFeatureStoreTool:
         top_k (int): The number of top recommendations to keep.
     """
         
-    def __init__(self, name, desc, item_corpus, buffer, fetch_tool, top_k=5,
+    def __init__(self, name, desc, item_corpus, buffer, fetch_tool, terms=None, top_k=5,
                   features=['ITEMS'], retailer_id=12):
         
         self.name = name
@@ -32,6 +35,20 @@ class RankFeatureStoreTool:
         self.features = features
         self.retailer_id = retailer_id
         self.top_k = top_k
+
+        # if terms is not none, define a sentence transformer engine for fuzzy search
+        if terms:
+            # terms is a directory to a csv file. load that file
+            terms = pd.read_csv(terms)
+            # convert terms to ndarray
+            self.terms = np.array(terms).flatten()
+            
+            self.engine = SentBERTEngine(self.terms, 
+                                         list(range(len(self.terms))), 
+                                         model_name="thenlper/gte-base", 
+                                         case_sensitive=False)
+        else:
+            self.terms = None
 
     def fetch_rank_items(self):
         """
@@ -75,7 +92,6 @@ class RankFeatureStoreTool:
         # Update items in rank
         self.items_rank = self.items_rank[self.items_rank['id'].isin(ids)]
 
-    # Run the tool
 
     def run(self, term='null'):
         """
@@ -85,7 +101,14 @@ class RankFeatureStoreTool:
         # if a term is not provided use the fetch tool term
         if term == 'null':
             term = self.fetch_tool.term
-        self.term = term
+
+        # Rewrite search term
+        if self.terms is not None and term not in self.terms:
+            new_term = self.fuzzy_search(term)
+            info += f"System: Fuzzy search replaced term '{term}' with '{new_term}' in the ranking tool.\n"
+            self.term = new_term
+        else:
+            self.term = term
 
         # Fetch items from rank feature store
         self.fetch_rank_items()
@@ -103,3 +126,15 @@ class RankFeatureStoreTool:
 
         # Return message with ids
         return f"Here are the recommended candidate ids: [{','.join(map(str, ids))}]."
+    
+    
+    def fuzzy_search(self, term):
+        """
+        Searches for the most similar term in the terms list.
+        """
+
+        logger.debug(f"Ranking tool rewrite search term: {term}")
+        new_term = self.engine(term,topk=1,return_doc=True)[0]
+        logger.debug(f"New term: {new_term}")
+
+        return new_term

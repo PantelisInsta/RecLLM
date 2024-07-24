@@ -184,6 +184,7 @@ if args.feature_store_tools:
         item_corpus=item_corpus,
         buffer=candidate_buffer,
         fetch_tool=hard_filter_tool,
+        terms=RANKING_SEARCH_TERMS_FILE,
     )
 else:
     hard_filter_tool = SQLSearchTool(
