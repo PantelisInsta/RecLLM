@@ -61,6 +61,11 @@ class UserProfileMemory:
 
 
     def update(self, conversation: str):
+        """
+        Parses LLM output to update user profile. If the output is not in json format, it will attempt to correct it.
+        Removes/adds items to the like/unwanted sets based on the conversation. Updates the history set with the items
+        mentioned in the conversation.
+        """
         cur_profile: str = self.conclude_user_profile(conversation)
         parse_success = False
         limit = 3

@@ -109,6 +109,8 @@ _TOOL_DESC = {
     "MAP_TOOL_DESC": MAP_TOOL_DESC,
 }
 
+
+# It seems like this is not really used, so one can dynamically choose which ranking and retrieval tools to use
 OVERALL_TOOL_DESC = """
 There are several tools to use:
 - {BufferStoreTool}: {CANDIDATE_STORE_TOOL_DESC}

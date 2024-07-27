@@ -122,8 +122,12 @@ class ToolBox:
                 if not isinstance(v, str):
                     v = json.dumps(v)
                 # If the tool is ranking tool, merge the user profile information
+                # This is where the user profile is used to update the ranking tool
                 if "ranking" in k.lower():
-                    if profile:
+                    # get ranking tool name as a string
+                    ranking_tool_string = str(self.tools['Candidates Ranking Tool'])
+                    # make sure profile info exists and ranking tool accepts it
+                    if profile and 'reco' in ranking_tool_string:
                         try:
                             inputs = json.loads(v)
                             print(profile.items())
@@ -584,13 +588,16 @@ class CRSAgentPlanFirstOpenAI:
             if success:
                 # include plan to the prompt map
                 prompt_map['plan'] = info
-
+                
+                start = time.time()
                 if self.enable_summarize:
                     # Summarize the response to keep context window concise
                     resp = self._summarize_recommendation(result, prompt_map)
                 else:
                     resp = result
                 # total_token_usage.update(token_usage)
+                end = time.time()
+                logger.debug(f"Result summarization latency: {end - start} s.")
             else:
                 resp = "Something went wrong, please retry."
 
@@ -640,6 +647,11 @@ class CRSAgentPlanFirstOpenAI:
             "Please use those information to generate flexible and comprehensive response to human. Never tell the tool names to human.\n"
         )
 
+        """
+        Invokes the API once more to summarize the final results. Functionality like this might be leveraged to
+        do some more involved reasoning in the future, for example for the affordability tool to pick the final
+        items that are within the user's budget.
+        """
         if self.reply_style == "concise":
             user_prompt += "Do not give details about items and make the response concise."
 

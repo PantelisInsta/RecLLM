@@ -134,6 +134,13 @@ parser.add_argument(
     help="Use feature store tools for hard filtering and ranking",
 )
 
+# use whether to update user profile or not
+parser.add_argument(
+    "--update_user_profile",
+    action="store_true",
+    help="Use feature store tools for hard filtering and ranking",
+)
+
 args = parser.parse_args()
 
 # Define map that replaces {item} for domain specific item
@@ -271,6 +278,7 @@ bot = AgentType(
     reflection_limits=args.reflection_limits,  # reflexion
     verbose=True,
     reply_style=args.reply_style,  # only supported for CRSAgentPlanFirstOpenAI
+    user_profile_update=args.update_user_profile,
     planning_recording_file='plans/plan.json'  # planning recording file
 )
 
