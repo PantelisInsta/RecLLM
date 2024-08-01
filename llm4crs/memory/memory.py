@@ -42,6 +42,36 @@ class UserProfileMemory:
             "unwanted": set([]),
         }
 
+    def load_preferences(self, file_path: str):
+        """
+        Load user preferences from a JSON file.
+        """
+        try:
+            with open(file_path, 'r') as file:
+                preferences = json.load(file)
+            
+            for key in ['history', 'like', 'unwanted']:
+                if key in preferences:
+                    self.profile[key] = set(preferences[key])
+            
+            return True
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error loading preferences from file: {e}")
+            return False
+
+    def save_preferences(self, file_path: str):
+        """
+        Save current preferences to a JSON file.
+        """
+        preferences = {k: list(v) for k, v in self.profile.items()}
+        try:
+            with open(file_path, 'w') as file:
+                json.dump(preferences, file, indent=2)
+            return True
+        except IOError as e:
+            print(f"Error saving preferences to file: {e}")
+            return False
+
     def conclude_user_profile(self, conversation: str) -> str:
         prompt = "Your task is to extract user profile from the conversation."
         prompt += f"The profile consists of three parts: history, like and unwanted.Each part is a list. You should return a json-format string.\nHere are some examples.\n{_FEW_SHOT_EXAMPLES}\nNow extract user profiles from below conversation: \n> Conversation\n{conversation}\n> Profiles\n"
@@ -95,4 +125,3 @@ class UserProfileMemory:
             "like": set([]),
             "unwanted": set([]),
         }
-        

@@ -145,6 +145,9 @@ class Conversation:
         
 
 class OpenAIBot:
+    """
+    Wrapper for OpenAI API for recommendations.
+    """
     def __init__(
         self,
         domain: str,
@@ -210,6 +213,9 @@ class OpenAIBot:
 
 
 class RecBotWrapper:
+    """
+    Wrapper for RecAI, used for single-turn ranking.
+    """
     def __init__(self, bot: CRSAgent, num_rec):
         self.bot = bot
         self.num_rec = num_rec
@@ -223,6 +229,9 @@ class RecBotWrapper:
     
 
 class StaticAgent:
+    """
+    Agent for static rankings, based on random choice or popularity.
+    """
     def __init__(self, corups: BaseGallery, num_rec, strategy: str) -> None:
         self.corups = corups
         self.num_rec = num_rec
@@ -253,6 +262,10 @@ class StaticAgent:
 
 
 def hit_judge(msg: str, target: str, thres: float=80):
+    """
+    Compares agent recommendation to the target item using fuzzy matching,
+    and determines whether it was a hit.
+    """
     msg = re.sub(r"[^a-zA-Z0-9\s]", "", msg.lower())
     target = re.sub(r"[^a-zA-Z0-9\s]", "", target.lower())
     if fuzz.partial_ratio(msg, target) > thres:
@@ -262,6 +275,9 @@ def hit_judge(msg: str, target: str, thres: float=80):
     
 
 def get_rank(pred: str, target: str):
+    """
+    Extracts a json string from the prediction and returns the rank of the target item.
+    """
     pattern = r"\{.*?\}"
     json_str = re.findall(pattern, pred, re.DOTALL)
     if json_str:
@@ -295,6 +311,10 @@ def get_rank(pred: str, target: str):
 
 
 def one_turn_conversation_eval(data: List[Dict], agent: RecBotWrapper, k: int):
+    """
+    Iterates through the data and evaluates the agent's performance in one-turn
+    ranking conversations. Returns the NDCG@k metric and the conversation history.
+    """
     conversation = []
     ndcg = []
     mr = []

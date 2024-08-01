@@ -22,7 +22,7 @@ from llm4crs.agent import CRSAgent
 from llm4crs.agent_plan_first import CRSAgentPlanFirst
 from llm4crs.agent_plan_first_openai import CRSAgentPlanFirstOpenAI
 from llm4crs.buffer import CandidateBuffer
-from llm4crs.corups import BaseGallery
+from llm4crs.corpus import BaseGallery
 from llm4crs.critic import Critic
 from llm4crs.environ_variables import *
 from llm4crs.mapper import MapTool
@@ -94,6 +94,9 @@ class Conversation:
 
 
 class OpenAIBot:
+    """
+    Wrapper for OpenAI API for recommendations.
+    """
     def __init__(
         self,
         domain: str,
@@ -164,6 +167,9 @@ class OpenAIBot:
 
 
 class RecBotWrapper:
+    """
+    Wrapper for RecAI, used for single-turn recommendations.
+    """
     def __init__(self, bot: CRSAgent, num_rec):
         self.bot = bot
         self.num_rec = num_rec
@@ -179,8 +185,11 @@ class RecBotWrapper:
 
 
 class StaticAgent:
-    def __init__(self, corups: BaseGallery, num_rec, strategy: str) -> None:
-        self.corups = corups
+    """
+    Agent for static recommendations, based on random choice or popularity.
+    """
+    def __init__(self, corpus: BaseGallery, num_rec, strategy: str) -> None:
+        self.corpus = corpus
         self.num_rec = num_rec
         assert strategy in {
             "random",
@@ -190,12 +199,12 @@ class StaticAgent:
 
     def run(self, chat_history: str):
         if self.strategy == "random":
-            items = self.corups.corups.sample(self.num_rec, replace=False).to_dict(
+            items = self.corpus.corpus.sample(self.num_rec, replace=False).to_dict(
                 orient="list"
             )
             item_titles = items["title"]
         else:
-            items = self.corups.corups.sample(
+            items = self.corpus.corpus.sample(
                 self.num_rec, replace=False, weights="visited_num"
             ).to_dict(orient="list")
             item_titles = items["title"]
@@ -203,6 +212,10 @@ class StaticAgent:
 
 
 def hit_judge(msg: str, target: str, thres: float = 80):
+    """
+    Compares agent recommendation to the target item using fuzzy matching,
+    and determines whether it was a hit.
+    """
     msg = re.sub(r"[^a-zA-Z0-9\s]", "", msg.lower())
     target = re.sub(r"[^a-zA-Z0-9\s]", "", target.lower())
     if fuzz.partial_ratio(msg, target) > thres:
@@ -212,6 +225,10 @@ def hit_judge(msg: str, target: str, thres: float = 80):
 
 
 def one_turn_conversation_eval(data: List[Dict], agent: CRSAgent):
+    """
+    Iterates through the data and evaluates the agent's performance in one-turn
+    recommendation conversations.
+    """
     conversation = []
     hit_num = 0
     for i, d in enumerate(tqdm(data)):
@@ -352,7 +369,7 @@ def main():
 
     args, _ = parser.parse_known_args()
 
-    domain = os.environ.get("DOMAIN", "game")
+    domain = os.environ.get("DOMAIN", "groceries")
 
     domain_map = {"item": domain, "Item": domain.capitalize(), "ITEM": domain.upper()}
 
@@ -363,7 +380,7 @@ def main():
     if args.agent == "recbot":
         tool_names = {k: v.format(**domain_map) for k, v in TOOL_NAMES.items()}
 
-        item_corups = BaseGallery(
+        item_corpus = BaseGallery(
             GAME_INFO_FILE,
             TABLE_COL_DESC_FILE,
             f"{domain}_information",
@@ -373,7 +390,7 @@ def main():
         )
 
         candidate_buffer = CandidateBuffer(
-            item_corups, num_limit=args.max_candidate_num
+            item_corpus, num_limit=args.max_candidate_num
         )
 
         # The key of dict here is used to map to the prompt
@@ -386,13 +403,13 @@ def main():
             "LookUpTool": QueryTool(
                 name=tool_names["LookUpTool"],
                 desc=LOOK_UP_TOOL_DESC.format(**domain_map),
-                item_corups=item_corups,
+                item_corpus=item_corpus,
                 buffer=candidate_buffer,
             ),
             "HardFilterTool": SQLSearchTool(
                 name=tool_names["HardFilterTool"],
                 desc=HARD_FILTER_TOOL_DESC.format(**domain_map),
-                item_corups=item_corups,
+                item_corpus=item_corpus,
                 buffer=candidate_buffer,
                 max_candidates_num=args.max_candidate_num,
             ),
@@ -400,7 +417,7 @@ def main():
                 name=tool_names["SoftFilterTool"],
                 desc=SOFT_FILTER_TOOL_DESC.format(**domain_map),
                 item_sim_path=ITEM_SIM_FILE,
-                item_corups=item_corups,
+                item_corpus=item_corpus,
                 buffer=candidate_buffer,
                 top_ratio=args.similar_ratio,
             ),
@@ -408,14 +425,14 @@ def main():
                 name=tool_names["RankingTool"],
                 desc=RANKING_TOOL_DESC.format(**domain_map),
                 model_fpath=MODEL_CKPT_FILE,
-                item_corups=item_corups,
+                item_corpus=item_corpus,
                 buffer=candidate_buffer,
                 rec_num=args.rank_num,
             ),
             "MapTool": MapTool(
                 name=tool_names["MapTool"],
                 desc=MAP_TOOL_DESC.format(**domain_map),
-                item_corups=item_corups,
+                item_corpus=item_corpus,
                 buffer=candidate_buffer,
                 max_rec_num=100,
             ),
@@ -446,7 +463,7 @@ def main():
             domain,
             tools,
             candidate_buffer,
-            item_corups,
+            item_corpus,
             os.environ.get("AGENT_ENGINE", ""),
             args.bot_type,
             max_tokens=args.max_output_tokens,
@@ -490,7 +507,7 @@ def main():
         )
 
     elif args.agent in {"random", "popularity"}:
-        corups = item_corups = BaseGallery(
+        corpus = item_corpus = BaseGallery(
             GAME_INFO_FILE,
             TABLE_COL_DESC_FILE,
             f"{domain}_information",
@@ -499,7 +516,7 @@ def main():
             categorical_cols=CATEGORICAL_COLS,
         )
 
-        bot = StaticAgent(corups, args.num_rec, strategy=args.agent)
+        bot = StaticAgent(corpus, args.num_rec, strategy=args.agent)
 
     else:
         raise ValueError("Not support for such agent.")

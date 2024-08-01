@@ -400,6 +400,40 @@ class CRSAgentPlanFirstOpenAI:
         if self.user_profile_update > 0:
             self.user_profile = UserProfileMemory(llm_engine=self.agent)
 
+
+    def load_user_preferences(self, file_path: str):
+        """
+        Load user preferences from a JSON file.
+        If the user profile doesn't exist, it creates one.
+        """
+        if not hasattr(self, 'user_profile'):
+            self.user_profile = UserProfileMemory(llm_engine=self.agent)
+        
+        success = self.user_profile.load_preferences(file_path)
+        if success:
+            print(f"Loaded preferences from {file_path}")
+        else:
+            print(f"Failed to load preferences from {file_path}. Starting with empty profile.")
+        
+        return success
+    
+
+    def save_user_preferences(self, file_path: str):
+        """
+        Save current user preferences to a JSON file.
+        """
+        if hasattr(self, 'user_profile'):
+            success = self.user_profile.save_preferences(file_path)
+            if success:
+                print(f"Saved preferences to {file_path}")
+            else:
+                print(f"Failed to save preferences to {file_path}")
+            return success
+        else:
+            print("No user profile exists to save.")
+            return False
+    
+
     # Customize system prompt to contain all information about what tools are 
     # available and what they do
     def setup_prompts(self, tools: List[Tool]):

@@ -134,11 +134,19 @@ parser.add_argument(
     help="Use feature store tools for hard filtering and ranking",
 )
 
-# use whether to update user profile or not
+# whether to update user profile or not
 parser.add_argument(
     "--update_user_profile",
     action="store_true",
-    help="Use feature store tools for hard filtering and ranking",
+    help="Turns on user profile update",
+)
+
+# whether to load user profile from file
+parser.add_argument(
+    "--load_user_profile",
+    type=str,
+    default=None,
+    help="Specify json file to load user profile from",
 )
 
 args = parser.parse_args()
@@ -305,6 +313,10 @@ def user(user_message, history):
 
 bot.init_agent()
 bot.set_mode("accuracy")
+
+# initialize user profile from file
+if args.load_user_profile:
+    bot.load_preferences(args.load_user_profile)
 
 css = """
 #chatbot .overflow-y-auto{height:600px}
