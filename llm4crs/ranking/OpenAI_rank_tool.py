@@ -30,8 +30,8 @@ class OpenAIRankingTool:
         recommend items to shoppers based on their query and candidate item information. Please try to \
         understand user intent from the query and recommend items that best match what the shopper \
         wants based on the provided item information. You should return a list of item IDs in the \
-        order of recommendation. If there are more than {rec_num} items, return the top {rec_num} recommendations. \
-        You should also provide a justification for the top {explain_top} picks. \
+        order of recommendation. If there are more than {rec_num} items, return the top {rec_num} \
+        recommendations. You should also provide a justification for the top {explain_top} picks. \
         User query: {{query}} \n Candidate items: {{reco_info}} \n"""
 
         # replace known quantities in prompt
@@ -81,7 +81,7 @@ class OpenAIRankingTool:
         prompt = self.prompt.format(query=query,reco_info=reco_str)
 
         # call OpenAI API to get recommendations
-        output = agent.call(prompt)
+        output = agent.call(prompt,max_tokens=1000)
 
         return output
         

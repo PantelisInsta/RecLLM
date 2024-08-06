@@ -46,7 +46,7 @@ agent = OpenAICall(
             temperature=0,
             model_type="chat",
             timeout=60,
-            stop_words=["Obsersation", "observation", "Observation:", "observation:"],
+            stop_words=None,
         )
 
 # Fetch items from the feature store
