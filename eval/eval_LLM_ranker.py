@@ -1,6 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
+# setup
+import setup_env
+
 import os
 import random
 import re
@@ -27,9 +30,9 @@ from llm4crs.environ_variables import *
 from llm4crs.critic import Critic
 from llm4crs.mapper import MapTool
 from llm4crs.query import QueryTool
-from llm4crs.ranking import RecModelTool
+from llm4crs.ranking import RecModelTool, RankFeatureStoreTool
 from llm4crs.buffer import CandidateBuffer
-from llm4crs.retrieval import SQLSearchTool, SimilarItemTool
+from llm4crs.retrieval import SQLSearchTool, SimilarItemTool, FetchFeatureStoreItemsTool
 
 
 
@@ -142,74 +145,6 @@ class Conversation:
             for entry in self.all_history:
                 json.dump(entry, f)
                 f.write('\n')
-        
-
-class OpenAIBot:
-    """
-    Wrapper for OpenAI API for recommendations.
-    """
-    def __init__(
-        self,
-        domain: str,
-        engine: str,
-        api_key: str,
-        api_type: str,
-        api_base: str,
-        api_version: str,
-        num_rec: int,
-        timeout: int,
-        fschat: bool=False
-    ):
-        self.domain = domain
-        self.engine = engine
-        self.api_key = api_key
-        self.api_type = api_type
-        self.api_base = api_base
-        self.api_version = api_version
-        self.num_rec = num_rec
-        self.timeout = timeout
-        self.fschat = fschat
-        
-
-    def run(self, question: str) -> str:
-        if len(self.api_type) > 0: 
-            openai.api_base = self.api_base
-            openai.api_version = self.api_version
-            openai.api_type = self.api_type
-        else:
-            pass
-        if self.fschat:
-            openai.api_base = self.api_base
-        openai.api_key = self.api_key
-        prompt = "You are a helpful conversational agent who is good at recommendation."
-        sys_msg = {'role': 'system', 'content': prompt.format(domain=self.domain)}
-
-        usr_prompt = "Here is the user question: \n{question}. You should rank all candidate {domain}s. They are indeed {domain} names. Do NOT suspect. The output must be just a json str, where the key is the item and value is the rank."
-        usr_msg = {'role': 'user', 'content': usr_prompt.format(question=question, domain=self.domain)}
-        
-        msg = [sys_msg, usr_msg]
-
-        retry_cnt = 6
-        for retry in range(retry_cnt):
-            # runner = TimeoutRunner(openai.ChatCompletion.create, self.timeout)
-            try:
-                kwargs = {
-                    "model": self.engine, 
-                    "temperature": 0.8,
-                    "messages": msg,
-                    "max_tokens": 1000,
-                    "request_timeout": self.timeout
-                }
-                if (not self.fschat) and (openai.api_type != 'open_ai'):
-                    kwargs["engine"] = self.engine
-                chat = openai.ChatCompletion.create(**kwargs)
-                reply = chat.choices[0].message.content
-                break
-            except Exception as e:
-                print(f"An error occurred while making the API call: {e}")
-                reply = "Something went wrong, please retry."
-                time.sleep(random.randint(1, 5))
-        return reply
 
 
 class RecBotWrapper:
@@ -226,39 +161,6 @@ class RecBotWrapper:
 
     def clear(self):
         self.bot.clear()
-    
-
-class StaticAgent:
-    """
-    Agent for static rankings, based on random choice or popularity.
-    """
-    def __init__(self, corpus: BaseGallery, num_rec, strategy: str) -> None:
-        self.corpus = corpus
-        self.num_rec = num_rec
-        assert strategy in {'random', 'popularity'}, f"Only support `random` and `popularity` strategies, while got {strategy}."
-        self.strategy = strategy
-
-    def run(self, chat_history: str):
-        if self.strategy == 'random':
-            items = self.corpus.corpus.sample(self.num_rec, replace=False).to_dict(orient='list')
-            item_titles = items['title']
-        else:
-            items = self.corpus.corpus.sample(self.num_rec, replace=False, weights='visited_num').to_dict(orient='list')
-            item_titles = items['title']
-        return "; ".join(item_titles)
-
-
-# def neg_item_sample(corpus: BaseGallery, history: str, target: str, n: int):
-#     res = []
-#     for i in range(n):
-#         idx = random.randint(0, len(corpus))
-#         title = corpus.corpus.iloc[idx]['title']
-#         while (title in history) or (title in res) or (title in target):
-#             idx = random.randint(0, len(corpus))
-#             title = corpus.corpus.iloc[idx]['title']
-#         res.append(title)
-#     res.append(target)
-#     return "; ".join(res)
 
 
 def hit_judge(msg: str, target: str, thres: float=80):
@@ -350,14 +252,14 @@ def main():
     parser.add_argument("--data", type=str, default="data/ranking_data.jsonl")
     parser.add_argument("--max_turns", type=int, default=5, help="max turns limit for evaluation")
     parser.add_argument("--save", type=str, help='path to save conversation text')
-    parser.add_argument('--engine', type=str, default='text-davinci-003',
-                    help='Engine of OpenAI API to use as user simulator. The default is text-davinci-003') 
+    parser.add_argument('--engine', type=str, default='gpt-4',
+                    help='Engine of OpenAI API to use as user simulator. The default is gpt-4') 
     parser.add_argument("--timeout", type=int, default=5, help="Timeout threshold when calling OAI. (seconds)")
     parser.add_argument("--k", type=int, default=20, help="NDCG cutoff")
     parser.add_argument("--seed", type=int, default=2024, help="random seed")
 
     # parser.add_argument('--domain', type=str, default='game')
-    parser.add_argument('--agent', type=str, help='agent type, "recbot" is our method and others are baselines')
+    parser.add_argument('--agent', default='recbot',type=str, help='agent type, "recbot" is our method and others are baselines')
     parser.add_argument('--num_rec', type=int, default=5,  help='number of items to be recommended')
 
     # recbot-agent
@@ -365,8 +267,8 @@ def main():
     parser.add_argument('--similar_ratio', type=float, default=0.1, help="Ratio of returned similar items / total games")
     parser.add_argument('--rank_num', type=int, default=100, help="Number of games given by ranking tool")
     parser.add_argument('--max_output_tokens', type=int, default=512, help="Max number of tokens in LLM output")
-    parser.add_argument('--bot_type', type=str, default='completion', choices=['chat', 'completion'],
-                    help='Type OpenAI models. The default is completion. Options [completion, chat]') 
+    parser.add_argument('--bot_type', type=str, default='chat', choices=['chat', 'completion'],
+                    help='Type OpenAI models. The default is chat. Options [completion, chat]') 
 
     # chat history shortening
     parser.add_argument('--enable_shorten', type=int, choices=[0,1], default=0, help="Whether to enable shorten chat history with LLM")
@@ -381,7 +283,7 @@ def main():
     parser.add_argument('--reflection_limits', type=int, default=3, help="limits of reflection times")
 
     # plan first agent
-    parser.add_argument('--plan_first', type=int, choices=[0,1], default=0, help="Whether to use plan first agent")
+    parser.add_argument('--plan_first', type=int, choices=[0,1], default=1, help="Whether to use plan first agent")
     parser.add_argument("--langchain", type=int, choices=[0, 1], default=0, help="Whether to use langchain in plan-first agent")
 
     args, _ = parser.parse_known_args()
@@ -395,7 +297,7 @@ def main():
     # Combine root dir with data path
     args.data = os.path.join(ROOT_DIR, args.data) 
     print(args.data)
-    eval_data = read_jsonl(args.data)
+    eval_data = read_jsonl(args.data)[:10]
 
     conversation = Conversation()
 
@@ -410,18 +312,19 @@ def main():
 
         candidate_buffer = CandidateBuffer(item_corpus, num_limit=args.max_candidate_num)
 
+        hard_filter_tool = FetchFeatureStoreItemsTool(name=tool_names['HardFilterTool'], desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, 
+                                                buffer=candidate_buffer, terms=SEARCH_TERMS_FILE)
 
         # The key of dict here is used to map to the prompt
         tools = {
                 "BufferStoreTool": FuncToolWrapper(func=candidate_buffer.init_candidates, name=tool_names['BufferStoreTool'], 
                                                 desc=CANDIDATE_STORE_TOOL_DESC.format(**domain_map)),
                 "LookUpTool": QueryTool(name=tool_names['LookUpTool'], desc=LOOK_UP_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, buffer=candidate_buffer),
-                "HardFilterTool": SQLSearchTool(name=tool_names['HardFilterTool'], desc=HARD_FILTER_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, 
-                                                buffer=candidate_buffer, max_candidates_num=args.max_candidate_num),
+                "HardFilterTool": hard_filter_tool,
                 "SoftFilterTool": SimilarItemTool(name=tool_names['SoftFilterTool'], desc=SOFT_FILTER_TOOL_DESC.format(**domain_map), item_sim_path=ITEM_SIM_FILE, 
                                                 item_corpus=item_corpus, buffer=candidate_buffer, top_ratio=args.similar_ratio),
-                "RankingTool": RecModelTool(name=tool_names['RankingTool'], desc=RANKING_TOOL_DESC.format(**domain_map), model_fpath=MODEL_CKPT_FILE, 
-                                            item_corpus=item_corpus, buffer=candidate_buffer, rec_num=args.rank_num),
+                "RankingTool": RankFeatureStoreTool(name=tool_names['RankingTool'], desc=FEATURE_STORE_RANK_TOOL_DESC.format(**domain_map), 
+                                            item_corpus=item_corpus, buffer=candidate_buffer, fetch_tool=hard_filter_tool, terms=RANKING_SEARCH_TERMS_FILE),
                 "MapTool": MapTool(name=tool_names['MapTool'], desc=MAP_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, buffer=candidate_buffer, max_rec_num=100),
                 # "BufferClearTool": buffer_replan_tool
         }
@@ -446,7 +349,7 @@ def main():
             AgentType = CRSAgent
 
 
-        bot = AgentType(domain, tools, candidate_buffer, item_corpus, os.environ.get("AGENT_ENGINE", ""), 
+        bot = AgentType(domain, tools, candidate_buffer, item_corpus, args.engine, 
                     args.bot_type, max_tokens=args.max_output_tokens, 
                     enable_shorten=args.enable_shorten,  # history shortening
                     demo_mode=args.demo_mode, demo_dir_or_file=args.demo_dir_or_file, num_demos=args.num_demos,    # demonstration
@@ -454,41 +357,6 @@ def main():
         
         bot.init_agent()
         bot = RecBotWrapper(bot, args.num_rec)
-
-    
-    elif args.agent == 'gpt4' or args.agent == 'chatgpt':
-        bot = OpenAIBot(
-            domain = domain,
-            engine = os.environ.get("AGENT_ENGINE"),
-            api_base = os.environ.get("OPENAI_API_BASE"),
-            api_key = os.environ.get("OPENAI_API_KEY"),
-            api_version = os.environ.get("OPENAI_API_VERSION"),
-            api_type = os.environ.get("OPENAI_API_TYPE"),
-            num_rec = args.num_rec,
-            timeout = args.timeout
-        )
-
-
-    elif args.agent.startswith('llama') or args.agent.startswith('vicuna'):  # refer to fastchat to build API
-        bot = OpenAIBot(
-            domain = domain,
-            engine = 'gpt-3.5-turbo',
-            api_base = os.environ.get("OPENAI_API_BASE"),
-            api_key = "EMPTY",
-            api_version = os.environ.get("OPENAI_API_VERSION"),
-            api_type = os.environ.get("OPENAI_API_TYPE"),
-            num_rec = args.num_rec,
-            timeout = args.timeout,
-            fschat=True
-        )
-
-
-    elif args.agent in {'random', 'popularity'}:
-        item_corpus = BaseGallery(GAME_INFO_FILE, TABLE_COL_DESC_FILE, f'{domain}_information',
-                                    columns=USE_COLS, 
-                                    fuzzy_cols=['title'] + CATEGORICAL_COLS, 
-                                    categorical_cols=CATEGORICAL_COLS)
-        bot = StaticAgent(item_corpus, args.num_rec, strategy=args.agent)
 
     else:
         raise ValueError("Not support for such agent.")

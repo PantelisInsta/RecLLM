@@ -51,7 +51,7 @@ parser.add_argument(
     "--engine",
     type=str,
     default="gpt-4",
-    help="Engine of OpenAI API to use. The default is text-davinci-003",
+    help="Engine of OpenAI API to use. The default is gpt-4",
 )
 parser.add_argument(
     "--bot_type",

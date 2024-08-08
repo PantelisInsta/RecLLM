@@ -65,6 +65,7 @@ for i, term in search_terms.iterrows():
 
     data.append(d)
 
-# save to json file
-with open(f"{DATA_DIR}/ranking_data.json", 'w') as f:
-    json.dump(data, f, indent=2)
+# save to jsonl file
+with open(f"{DATA_DIR}/ranking_data.jsonl", 'w') as f:
+    for d in data:
+        f.write(json.dumps(d) + '\n')
