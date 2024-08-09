@@ -14,7 +14,7 @@ from loguru import logger
 
 from llm4crs.critic import Critic
 from llm4crs.demo.base import DemoSelector
-from llm4crs.prompt import SYSTEM_PROMPT_PLAN_FIRST, TOOLBOX_DESC, OVERALL_TOOL_DESC
+from llm4crs.prompt import SYSTEM_PROMPT_PLAN_FIRST, SYSTEM_PROMPT_PLAN_FIRST_RECO_ONLY, TOOLBOX_DESC, OVERALL_TOOL_DESC
 from llm4crs.utils import OpenAICall, num_tokens_from_string, format_prompt
 from llm4crs.utils.open_ai import get_openai_tokens
 from llm4crs.memory.memory import UserProfileMemory
@@ -447,7 +447,7 @@ class CRSAgentPlanFirstOpenAI:
         # Dictionary of tool name and description fed to the system prompt
         tools_desc = "\n".join([f"{tool.name}: {tool.desc}" for tool in self._tools])
         tool_names = "[" + ", ".join([f"{tool.name}" for tool in self._tools]) + "]"
-        template = SYSTEM_PROMPT_PLAN_FIRST.format(
+        template = SYSTEM_PROMPT_PLAN_FIRST_RECO_ONLY.format(
             tools_desc=tools_desc,
             tool_exe_name=self.toolbox.name,
             tool_names=tool_names,

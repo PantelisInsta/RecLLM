@@ -30,7 +30,7 @@ from llm4crs.environ_variables import *
 from llm4crs.critic import Critic
 from llm4crs.mapper import MapTool
 from llm4crs.query import QueryTool
-from llm4crs.ranking import RecModelTool, RankFeatureStoreTool
+from llm4crs.ranking import RecModelTool, RankFeatureStoreTool, OpenAIRankingTool
 from llm4crs.buffer import CandidateBuffer
 from llm4crs.retrieval import SQLSearchTool, SimilarItemTool, FetchFeatureStoreItemsTool
 
@@ -312,21 +312,17 @@ def main():
 
         candidate_buffer = CandidateBuffer(item_corpus, num_limit=args.max_candidate_num)
 
-        hard_filter_tool = FetchFeatureStoreItemsTool(name=tool_names['HardFilterTool'], desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, 
-                                                buffer=candidate_buffer, terms=SEARCH_TERMS_FILE)
-
         # The key of dict here is used to map to the prompt
         tools = {
                 "BufferStoreTool": FuncToolWrapper(func=candidate_buffer.init_candidates, name=tool_names['BufferStoreTool'], 
                                                 desc=CANDIDATE_STORE_TOOL_DESC.format(**domain_map)),
                 "LookUpTool": QueryTool(name=tool_names['LookUpTool'], desc=LOOK_UP_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, buffer=candidate_buffer),
-                "HardFilterTool": hard_filter_tool,
+                "HardFilterTool": FetchFeatureStoreItemsTool(name=tool_names['HardFilterTool'], desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, 
+                                                buffer=candidate_buffer, terms=SEARCH_TERMS_FILE),
                 "SoftFilterTool": SimilarItemTool(name=tool_names['SoftFilterTool'], desc=SOFT_FILTER_TOOL_DESC.format(**domain_map), item_sim_path=ITEM_SIM_FILE, 
                                                 item_corpus=item_corpus, buffer=candidate_buffer, top_ratio=args.similar_ratio),
-                "RankingTool": RankFeatureStoreTool(name=tool_names['RankingTool'], desc=FEATURE_STORE_RANK_TOOL_DESC.format(**domain_map), 
-                                            item_corpus=item_corpus, buffer=candidate_buffer, fetch_tool=hard_filter_tool, terms=RANKING_SEARCH_TERMS_FILE),
-                "MapTool": MapTool(name=tool_names['MapTool'], desc=MAP_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, buffer=candidate_buffer, max_rec_num=100),
-                # "BufferClearTool": buffer_replan_tool
+                "RankingTool": OpenAIRankingTool(name=tool_names["RankingTool"], desc=OPENAI_RANK_TOOL_DESC.format(**domain_map),
+                                                 item_corpus=item_corpus, buffer=candidate_buffer, use="eval"),
         }
 
         if args.enable_reflection:
@@ -353,7 +349,7 @@ def main():
                     args.bot_type, max_tokens=args.max_output_tokens, 
                     enable_shorten=args.enable_shorten,  # history shortening
                     demo_mode=args.demo_mode, demo_dir_or_file=args.demo_dir_or_file, num_demos=args.num_demos,    # demonstration
-                    critic=critic, reflection_limits=args.reflection_limits, reply_style="concise")   # reflexion
+                    critic=critic, reflection_limits=args.reflection_limits, enable_summarize=False)   # reflexion
         
         bot.init_agent()
         bot = RecBotWrapper(bot, args.num_rec)

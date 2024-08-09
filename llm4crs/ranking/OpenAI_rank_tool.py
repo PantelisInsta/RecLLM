@@ -93,7 +93,7 @@ class OpenAIRankingTool:
     def run(self, inputs):
 
         # user query
-        query = inputs["prompt"]
+        query = "I am looking for some " + inputs["prompt"]
         # OpenAI agent
         agent = inputs["agent"]
         
@@ -118,3 +118,5 @@ class OpenAIRankingTool:
             return explanations
         elif self.use == 'eval':
             return item_ids
+        else:
+            return "Invalid use case."
