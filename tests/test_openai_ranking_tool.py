@@ -14,6 +14,9 @@ import os
 # Set up environment variables that define data paths
 from llm4crs.environ_variables import *
 
+# Set up the mode
+mode = 'reco'
+
 # Load corpus of items
 item_corpus = BaseGallery(
     GAME_INFO_FILE,
@@ -34,7 +37,7 @@ fetch_tool = FetchFeatureStoreItemsTool('FeatureStoreItemTool',
 # Initialize the OpenAIRanking tool
 rank_tool = OpenAIRankingTool('OpenAIRankingTool',
                                 'Rank items using OpenAI API',
-                                item_corpus, candidate_buffer)
+                                item_corpus, candidate_buffer, mode=mode)
 
 # Initialize the OpenAI API
 agent = OpenAICall(
