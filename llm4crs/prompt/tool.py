@@ -87,7 +87,12 @@ Do not fake {item}s.
 
 FEATURE_STORE_RANK_TOOL_DESC = """
 The tool is useful to filter {item} for recommendation and refine {item} order, i.e. rank them according to feature store information. The tools input should be 'null', and the tool \
- should typically be used after the fetch tool.
+should typically be used after the fetch tool.
+"""
+
+OPENAI_RANK_TOOL_DESC = """
+Ranking tool that relies on the OpenAI API to generate recommendations. The tool's input should be 'null' and the tool should typically be used after the fetch tool. The tool can return a \
+detailed explanation of the top recommendations, so no mapping tool is needed after that.
 """
 
 MAP_TOOL_DESC = """
@@ -105,6 +110,7 @@ _TOOL_DESC = {
     "FEATURE_STORE_FILTER_TOOL_DESC": FEATURE_STORE_FILTER_TOOL_DESC,
     "SOFT_FILTER_TOOL_DESC": SOFT_FILTER_TOOL_DESC,
     "RANKING_TOOL_DESC": RANKING_TOOL_DESC,
+    "OPENAI_RANK_TOOL_DESC": OPENAI_RANK_TOOL_DESC,
     "FEATURE_STORE_RANK_TOOL_DESC": FEATURE_STORE_RANK_TOOL_DESC,
     "MAP_TOOL_DESC": MAP_TOOL_DESC,
 }
@@ -117,7 +123,7 @@ There are several tools to use:
 - {LookUpTool}: {LOOK_UP_TOOL_DESC}
 - {HardFilterTool}: {FEATURE_STORE_FILTER_TOOL_DESC}
 - {SoftFilterTool}: {SOFT_FILTER_TOOL_DESC}
-- {RankingTool}: {FEATURE_STORE_RANK_TOOL_DESC}
+- {RankingTool}: {OPENAI_RANK_TOOL_DESC}
 - {MapTool}: {MAP_TOOL_DESC}
 """.format(
     **TOOL_NAMES, **_TOOL_DESC

@@ -5,10 +5,10 @@ from loguru import logger
 TOOL_PROMPT_TEMPLATE = """You are an expert grocery item recommender. Your job is to \
 recommend items to shoppers based on their query and candidate item information. Please try to \
 understand user intent from the query and recommend items that best match what the shopper \
-wants based on the provided item information. You should return a list of item IDs in the \
-order of recommendation, in the form [ITEM1,ITEM2,ITEM3,...]. \
-If there are more than {rec_num} items, return the top {rec_num} \
-recommendations. You should also provide a justification for the top {explain_top} picks. \
+wants based on the provided item information. You should always first return a python list of integer item IDs in the \
+order of recommendation. For example, if there are two recommendations with ids 481290 and 124259, \
+you should return [481290, 124259]. If there are more than {rec_num} items, return the top {rec_num} \
+recommendations. After the list, you should also provide a justification for the top {explain_top} picks. \
 User query: {{query}} \n Candidate items: {{reco_info}} \n
 """
 
@@ -24,19 +24,19 @@ class OpenAIRankingTool:
         desc (str): The description of the tool.
         item_corpus (BaseGallery): The corpus of items.
         buffer (CandidateBuffer): The candidate bus to store candidates.
-        mode (str): The mode of the tool. Either 'reco' for recommendation or 'eval' for evaluation.
+        use (str): The usage of the tool. Either 'reco' for recommendation or 'eval' for evaluation.
         col_names (list): The names of the columns to include in the item information.
         rec_num (int): The number of recommendations to return.
         explain_top (int): The number of top recommendations to provide explanations for.
         api_key (str): The API key for the OpenAI API.
     """
-    def __init__(self, name, desc, item_corpus, buffer, mode='reco', col_names = None,
+    def __init__(self, name, desc, item_corpus, buffer, use='reco', col_names = None,
                   rec_num=20, explain_top=5, api_key=None):
         self.name = name
         self.desc = desc
         self.item_corpus = item_corpus
         self.buffer = buffer
-        self.mode = mode
+        self.use = use
         self.rec_num = rec_num
         self.explain_top = explain_top
         
@@ -83,9 +83,7 @@ class OpenAIRankingTool:
         start = output.find('[')
         end = output.find(']')
         # extract item IDs
-        item_ids = output[start+1:end].split(',')
-        # turn it into a list of integers
-        item_ids = [int(i) for i in item_ids]
+        item_ids = output[start:end+1]
         # extract explanations
         explanations = output[end+1:]
         
@@ -95,7 +93,7 @@ class OpenAIRankingTool:
     def run(self, inputs):
 
         # user query
-        query = inputs["input"]
+        query = inputs["prompt"]
         # OpenAI agent
         agent = inputs["agent"]
         
@@ -116,7 +114,7 @@ class OpenAIRankingTool:
         # split output in list of item IDs and detailed explanations
         item_ids, explanations = self.split_output(output)
 
-        if self.mode == 'reco':
+        if self.use == 'reco':
             return explanations
-        elif self.mode == 'eval':
+        elif self.use == 'eval':
             return item_ids

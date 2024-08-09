@@ -134,7 +134,7 @@ If the user is looking up information of {item}, such as the description of {ite
 For {item} recommendations, use tools with a shared candidate {item} buffer. The buffer is initialized with all {item}. Filtering tools fetch candidates from the buffer and update it. Remember to use {HardFilterTool} before {SoftFilterTool} if both are needed. Remember to use {RankingTool} to process the user's historical interactions or remove unwanted candidates. \
 Ranking tools rank {item} in the buffer, and mapping tool maps {item} IDs to titles. \
 If candidate {item} are given by users, use {BufferStoreTool} to add them to the buffer at the beginning.
-You MUST use {RankingTool} and {MapTool} before giving recommendations.
+You MUST use {RankingTool} before giving recommendations.
 
 Think about whether to use a tool first. If yes, make tool using plan and give the input of each tool. Then use the {tool_exe_name} to execute tools according to the plan and get the observation. \
 Only those tool names are optional when making plans: {tool_names}

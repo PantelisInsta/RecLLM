@@ -17,7 +17,7 @@ from llm4crs.critic import Critic
 from llm4crs.environ_variables import *
 from llm4crs.mapper import MapTool
 from llm4crs.prompt import *
-from llm4crs.ranking import RecModelTool, RankFeatureStoreTool
+from llm4crs.ranking import RecModelTool, RankFeatureStoreTool, OpenAIRankingTool
 from llm4crs.retrieval import SimilarItemTool, SQLSearchTool, FetchFeatureStoreItemsTool
 from llm4crs.query import QueryTool
 from llm4crs.utils import FuncToolWrapper
@@ -134,6 +134,13 @@ parser.add_argument(
     help="Use feature store tools for hard filtering and ranking",
 )
 
+# use LLM ranker for ranking
+parser.add_argument(
+    "--LLM_ranker",
+    action="store_true",
+    help="Use LLM ranker for ranking",
+)
+
 # whether to update user profile or not
 parser.add_argument(
     "--update_user_profile",
@@ -183,7 +190,10 @@ candidate_buffer = CandidateBuffer(item_corpus, num_limit=args.max_candidate_num
 # on the arguments passed to the script. Tool prompts are imported from prompt.py 
 # The key of dict here is used to map to the prompt
 
-# Pick which hard filter tool to use
+# Pick which tools to use
+
+map_tool = True
+summarize = True
 
 if args.feature_store_tools:
     hard_filter_tool = FetchFeatureStoreItemsTool(
@@ -201,6 +211,23 @@ if args.feature_store_tools:
         fetch_tool=hard_filter_tool,
         terms=RANKING_SEARCH_TERMS_FILE,
     )
+elif args.LLM_ranker:
+    hard_filter_tool = FetchFeatureStoreItemsTool(
+        name=tool_names["HardFilterTool"],
+        item_corpus=item_corpus,
+        buffer=candidate_buffer,
+        desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map),
+        terms=SEARCH_TERMS_FILE,
+    )
+    ranking_tool = OpenAIRankingTool(
+        name=tool_names["RankingTool"],
+        desc=OPENAI_RANK_TOOL_DESC.format(**domain_map),
+        item_corpus=item_corpus,
+        buffer=candidate_buffer,
+        use="reco",
+    )
+    map_tool = False
+    summarize = False
 else:
     hard_filter_tool = SQLSearchTool(
         name=tool_names["HardFilterTool"],
@@ -230,8 +257,7 @@ tools = {
         item_corpus=item_corpus,
         buffer=candidate_buffer,
     ),
-    "HardFilterTool": hard_filter_tool
-    ,
+    "HardFilterTool": hard_filter_tool,
     "SoftFilterTool": SimilarItemTool(
         name=tool_names["SoftFilterTool"],
         desc=SOFT_FILTER_TOOL_DESC.format(**domain_map),
@@ -240,15 +266,16 @@ tools = {
         buffer=candidate_buffer,
         top_ratio=args.similar_ratio,
     ),
-    "RankingTool": ranking_tool
-    ,
-    "MapTool": MapTool(
+    "RankingTool": ranking_tool,
+}
+
+if map_tool:
+    tools["MapTool"] = MapTool(
         name=tool_names["MapTool"],
         desc=MAP_TOOL_DESC.format(**domain_map),
         item_corpus=item_corpus,
         buffer=candidate_buffer,
-    ),
-}
+    )
 
 # Reflection tool is only available for plan-first agent
 if args.enable_reflection:
@@ -287,7 +314,8 @@ bot = AgentType(
     verbose=True,
     reply_style=args.reply_style,  # only supported for CRSAgentPlanFirstOpenAI
     user_profile_update=args.update_user_profile,
-    planning_recording_file='plans/plan.json'  # planning recording file
+    planning_recording_file='plans/plan.json',  # planning recording file
+    enable_summarize=summarize
 )
 
 logger.remove()

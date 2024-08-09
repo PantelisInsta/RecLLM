@@ -14,8 +14,8 @@ import os
 # Set up environment variables that define data paths
 from llm4crs.environ_variables import *
 
-# Set up the mode
-mode = 'reco'
+# Set up the usage mode
+use = 'reco'
 
 # Load corpus of items
 item_corpus = BaseGallery(
@@ -37,7 +37,7 @@ fetch_tool = FetchFeatureStoreItemsTool('FeatureStoreItemTool',
 # Initialize the OpenAIRanking tool
 rank_tool = OpenAIRankingTool('OpenAIRankingTool',
                                 'Rank items using OpenAI API',
-                                item_corpus, candidate_buffer, mode=mode)
+                                item_corpus, candidate_buffer, use=use)
 
 # Initialize the OpenAI API
 agent = OpenAICall(
@@ -59,7 +59,7 @@ term = "milk"
 fetch_tool.run(term)
 
 # Run the OpenAI ranking tool
-inputs = {"input": term, "agent": agent}
+inputs = {"prompt": term, "agent": agent}
 output = rank_tool.run(inputs)
 
 print(output)
