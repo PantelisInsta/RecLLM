@@ -93,7 +93,7 @@ class OpenAIRankingTool:
     def run(self, inputs):
 
         # user query
-        query = "I am looking for some " + inputs["prompt"]
+        query = inputs["prompt"]
         # OpenAI agent
         agent = inputs["agent"]
         

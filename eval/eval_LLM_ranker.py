@@ -156,60 +156,48 @@ class RecBotWrapper:
         self.num_rec = num_rec
 
     def run(self, question: str):
-        response = self.bot.run({"input": question + " The output must be a json string, where the key is the item and value is the rank. All candidates should be output."})
+        response = self.bot.run({"input": "I am looking for some" + question})
         return response
 
     def clear(self):
         self.bot.clear()
 
 
-def hit_judge(msg: str, target: str, thres: float=80):
+def get_ranks(predictions, data, k=20):
     """
-    Compares agent recommendation to the target item using fuzzy matching,
-    and determines whether it was a hit.
+    Receives a list of predictions (item IDs) and data including the predictions of a baseline model, 
+    which of these items converted and item names. Returns the rank of the converted items in the predictions
+    of the model of the baseline model, and the names of the converted items
     """
-    msg = re.sub(r"[^a-zA-Z0-9\s]", "", msg.lower())
-    target = re.sub(r"[^a-zA-Z0-9\s]", "", target.lower())
-    if fuzz.partial_ratio(msg, target) > thres:
-        return True
-    else:
-        return False
-    
 
-def get_rank(pred: str, target: str):
-    """
-    Extracts a json string from the prediction and returns the rank of the target item.
-    """
-    pattern = r"\{.*?\}"
-    json_str = re.findall(pattern, pred, re.DOTALL)
-    if json_str:
-        pred = json_str[0]
-        try:
-            pred = json.loads(pred)
-            pred = {k.strip(): v for k, v in pred.items()}
-        except:
-            return -1
-    else:
-        return -1
-    
-    if target not in pred:
-        for k, v in pred.items():
-            k = str(k)
-            if hit_judge(k, target, 90):
-                try:
-                    rank = int(v)
-                    return rank
-                except:
-                    rank = -1
-        return -1
+    converted = data['target']
+    ids = data['id']
+    names = data['name']
 
-    try:
-        rank = int(pred[target])
-    except:
-        return -1
-    
-    return rank
+    # get item ids and name for converted items
+    converted_ids = [ids[i] for i in range(len(ids)) if converted[i]]
+    converted_names = [names[i] for i in range(len(ids)) if converted[i]]
 
+    # get rank of converted items in baseline model
+    baseline = [i+1 for i in range(len(ids)) if converted[i]]
+
+    # get rank of converted items in predictions, only considering top k predictions
+    rank = []
+    for i, pred in enumerate(predictions[:k]):
+        if pred in converted_ids:
+            rank.append(i+1)
+
+    return rank, baseline, converted_names
+
+
+def convert_string_to_int_list(string):
+    
+    # remove [ and ] from the string
+    string = string.replace('[', '').replace(']', '')
+    # split by comma, remove whitespace, and convert to int
+    ids_str = string.split(',')
+
+    return [int(x.strip()) for x in ids_str]
 
 
 def one_turn_conversation_eval(data: List[Dict], agent: RecBotWrapper, k: int):
@@ -219,28 +207,40 @@ def one_turn_conversation_eval(data: List[Dict], agent: RecBotWrapper, k: int):
     """
     conversation = []
     ndcg = []
-    mr = []
+    baseline = []
     for i, d in enumerate(tqdm(data)):
         if hasattr(agent, "clear"):
             agent.clear()
         # candidates = neg_item_sample(corpus, d['context'], d['target'], k-1)
         agent_msg = agent.run(d['question'])
+        # convert agent_msg to list of integers
+        pred = convert_string_to_int_list(agent_msg)
+        
         if os.environ.get("DEBUG", '0') == '1':
             print(d['question'])
             print(agent_msg)
-        rank = get_rank(agent_msg, d['target'])
-        # rank = rank if rank > 0 else k
-        if rank > 0:
-            ndcg.append(1/math.log2(rank + 1))
+        rank, base, names = get_ranks(pred, d)
+
+        # Iterate through rank and base and compute ndcg for both models
+        if rank:
+            score = 0
+            for r in rank:
+                score += 1 / math.log2(r + 1)
+            ndcg.append(score)
         else:
             ndcg.append(0)
-
-        tqdm.write(f"Sample {i}: Rank={rank}, NDCG@{k}={sum(ndcg)}/{len(ndcg)}={(sum(ndcg)/len(ndcg)):.4f}")
-        conversation.append({'context': d['question'], 'target': d['target'], 'answer': agent_msg})
         
-    # hit_turn = np.array(hit_turn)
+        bs = 0
+        for b in base:
+            bs += 1 / math.log2(b + 1)
+        baseline.append(bs)
+
+        tqdm.write(f"Sample {i}: NDCG@{k}={(sum(ndcg)/len(ndcg)):.4f}, Baseline={(sum(baseline)/len(baseline)):.4f}")
+        conversation.append({'context': d['question'], 'target': names, 'answer': pred})
+        
     final_ndcg = sum(ndcg) / len(ndcg)
-    return {f"NDCG@{k}": final_ndcg}, conversation
+    final_baseline = sum(baseline) / len(baseline)
+    return {f"NDCG@{k}": final_ndcg, "Baseline": final_baseline}, conversation
     
     
 def main():
