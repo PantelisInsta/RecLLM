@@ -40,15 +40,16 @@ def fetch_retrieval_features(term, retailer_id, content_type, features):
     """
     
     builders = []
-    feature_builder = feature_store_utils.get_builder(
-            shard_entity_names=['retailer_id','term','content_type'],
-            shard_entity_values=[[retailer_id,term,content_type]],
-            features=features,
-            source_name='search_llm_agent_content_query_to_product_mapping',
-            secondary_entity_names=[],
-            source_version=2
-    )
-    builders.append(feature_builder)
-    df = feature_store_utils.get_data_from_builders(builders)[0]
+    for type in content_type:
+        feature_builder = feature_store_utils.get_builder(
+                shard_entity_names=['retailer_id','term','content_type'],
+                shard_entity_values=[[retailer_id,term,type]],
+                features=features,
+                source_name='search_llm_agent_content_query_to_product_mapping',
+                secondary_entity_names=[],
+                source_version=3
+        )
+        builders.append(feature_builder)
+    df = feature_store_utils.get_data_from_builders(builders)
 
     return df

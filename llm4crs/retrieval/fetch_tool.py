@@ -5,7 +5,7 @@ from loguru import logger
 from llm4crs.utils.feature_store import fetch_retrieval_features
 from llm4crs.utils import SentBERTEngine
 
-FEATURES = ['retailer_name', 'subtitle', 'product_ids', 'product_names']
+FEATURES = ['retailer_name', 'subquery', 'subtitle', 'product_ids', 'product_names']
 
 class FetchFeatureStoreItemsTool:
     """
@@ -24,7 +24,7 @@ class FetchFeatureStoreItemsTool:
         retailer_id (int): The retailer id.
     """
 
-    def __init__(self, name, item_corpus, buffer, desc, terms=None, content_type='substitute',
+    def __init__(self, name, item_corpus, buffer, desc, terms=None, content_type=['substitute'],
                   features=FEATURES, retailer_id=12):
         
         self.name = name
@@ -56,11 +56,17 @@ class FetchFeatureStoreItemsTool:
         """
 
         # Get dataframe of items
-        df = fetch_retrieval_features(term, 12, 'substitute', FEATURES)
+        df = fetch_retrieval_features(term, 12, self.content_type, self.features)
 
-        # Extract product indexes from product_ids column and convert to list of integers
-        product_indexes = list(df['product_ids'].values[0])
-        product_indexes = [int(x) for x in product_indexes]        
+        # for every content type, extract product indexes from product_ids column and convert to list of integers
+        product_indexes = []
+        for i in range(len(self.content_type)):
+            # Extract product indexes from product_ids column
+            product_indexes += list(df[i]['product_ids'].values[0])
+        # Convert to list of integers
+        product_indexes = [int(x) for x in product_indexes]
+        # Make sure there are no duplicates
+        product_indexes = list(set(product_indexes))
 
         return product_indexes
     

@@ -6,6 +6,12 @@ from llm4crs.retrieval.fetch_tool import FetchFeatureStoreItemsTool
 from llm4crs.buffer import CandidateBuffer
 from llm4crs.corpus import BaseGallery
 
+# Set up environment variables that define data paths
+from llm4crs.environ_variables import *
+
+# Variables
+term = "milk"
+content_type = ['substitute','complementary','theme']
 
 # Load corpus of items
 item_corpus = BaseGallery(
@@ -22,10 +28,8 @@ candidate_buffer = CandidateBuffer(item_corpus)
 # Initialize the fetchFeatureStore tool
 fetch_tool = FetchFeatureStoreItemsTool('FeatureStoreItemTool',
                                         item_corpus, candidate_buffer,
-                                        'Fetches items from the feature store')
-
-# Fetch items from the feature store
-term = "milk"
+                                        'Fetches items from the feature store',
+                                        content_type=content_type)
 
 # run the fetch tool
 fetch_tool.run(term)
