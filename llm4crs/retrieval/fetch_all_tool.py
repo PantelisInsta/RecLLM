@@ -9,7 +9,7 @@ import ast
 from llm4crs.utils.feature_store import fetch_retrieval_features, fetch_recall_rank_features
 from llm4crs.utils import SentBERTEngine
 
-FEATURES_REC = ['retailer_name', 'subtitle', 'product_ids', 'product_names']
+FEATURES_REC = ['retailer_name', 'products']
 FEATURES_RANK = ['ITEMS']
 
 class FetchAllTool:
@@ -78,8 +78,13 @@ class FetchAllTool:
         # for every content type, extract product indexes from product_ids column and convert to list of integers
         idx = []
         for i in range(len(content_type)):
-            # Extract product indexes from product_ids column
-            idx += list(df[i]['product_ids'].values[0])
+           # get list where each element corresponds to a subquery
+            subqueries = df[i]['products'].values[0]
+            # iterate over subquery to extract product indexes 
+            for j in range(len(subqueries)):
+                subquery = ast.literal_eval(subqueries[j])
+                # extract product indexes from product_ids column
+                idx += list(subquery['product_ids'])
         # Convert to list of integers
         idx = [int(x) for x in idx]
         # Make sure there are no duplicates

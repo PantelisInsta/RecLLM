@@ -47,7 +47,7 @@ def fetch_retrieval_features(term, retailer_id, content_type, features):
                 features=features,
                 source_name='search_llm_agent_content_query_to_product_mapping',
                 secondary_entity_names=[],
-                source_version=3
+                source_version=4
         )
         builders.append(feature_builder)
     df = feature_store_utils.get_data_from_builders(builders)

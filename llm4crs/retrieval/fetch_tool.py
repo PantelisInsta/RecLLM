@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
 from loguru import logger
+import ast
 
 from llm4crs.utils.feature_store import fetch_retrieval_features
 from llm4crs.utils import SentBERTEngine
 
-FEATURES = ['retailer_name', 'subquery', 'subtitle', 'product_ids', 'product_names']
+FEATURES = ['retailer_name', 'products']
 
 class FetchFeatureStoreItemsTool:
     """
@@ -61,8 +62,13 @@ class FetchFeatureStoreItemsTool:
         # for every content type, extract product indexes from product_ids column and convert to list of integers
         product_indexes = []
         for i in range(len(self.content_type)):
-            # Extract product indexes from product_ids column
-            product_indexes += list(df[i]['product_ids'].values[0])
+            # get list where each element corresponds to a subquery
+            subqueries = df[i]['products'].values[0]
+            # iterate over subquery to extract product indexes 
+            for j in range(len(subqueries)):
+                subquery = ast.literal_eval(subqueries[j])
+                # extract product indexes from product_ids column
+                product_indexes += list(subquery['product_ids'])
         # Convert to list of integers
         product_indexes = [int(x) for x in product_indexes]
         # Make sure there are no duplicates
