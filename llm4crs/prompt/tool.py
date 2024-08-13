@@ -91,7 +91,7 @@ should typically be used after the fetch tool.
 """
 
 OPENAI_RANK_TOOL_DESC = """
-Ranking tool that relies on the OpenAI API to generate recommendations. The tool's input should be 'null' and the tool should typically be used after the fetch tool. The tool can return a \
+Ranking tool that relies on the OpenAI API to generate recommendations. The tool's input should be 'null' and the tool should typically be used after the hard filtering tool. The tool can return a \
 detailed explanation of the top recommendations, so no mapping tool is needed after that.
 """
 

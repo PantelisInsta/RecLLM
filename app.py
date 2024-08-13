@@ -18,7 +18,7 @@ from llm4crs.environ_variables import *
 from llm4crs.mapper import MapTool
 from llm4crs.prompt import *
 from llm4crs.ranking import RecModelTool, RankFeatureStoreTool, OpenAIRankingTool
-from llm4crs.retrieval import SimilarItemTool, SQLSearchTool, FetchFeatureStoreItemsTool
+from llm4crs.retrieval import SimilarItemTool, SQLSearchTool, FetchFeatureStoreItemsTool, FetchAllTool
 from llm4crs.query import QueryTool
 from llm4crs.utils import FuncToolWrapper
 
@@ -212,12 +212,13 @@ if args.feature_store_tools:
         terms=RANKING_SEARCH_TERMS_FILE,
     )
 elif args.LLM_ranker:
-    hard_filter_tool = FetchFeatureStoreItemsTool(
+    hard_filter_tool = FetchAllTool(
         name=tool_names["HardFilterTool"],
+        desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map),
         item_corpus=item_corpus,
         buffer=candidate_buffer,
-        desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map),
-        terms=SEARCH_TERMS_FILE,
+        terms_rec=SEARCH_TERMS_FILE,
+        terms_rank=RANKING_SEARCH_TERMS_FILE,
     )
     ranking_tool = OpenAIRankingTool(
         name=tool_names["RankingTool"],

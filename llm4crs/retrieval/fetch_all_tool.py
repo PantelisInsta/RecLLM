@@ -130,7 +130,7 @@ class FetchAllTool:
         Returns the most similar term.
         """
         logger.debug(f"{API} tool rewrite search term: {term}")
-        new_term = self.engine(term,topk=1,return_doc=True)[0]
+        new_term = engine(term,topk=1,return_doc=True)[0]
         logger.debug(f"New term: {new_term}")
 
         return new_term
@@ -149,7 +149,11 @@ class FetchAllTool:
             self.term_rec = term
         
         # Fetch items from recommendation API
-        rec_indexes = self.fetch_rec_items(self.term_rec)
+        try:
+            rec_indexes = self.fetch_rec_items(self.term_rec)
+        except:
+            rec_indexes = []
+            info += f"System: No items found in the recommendation tool with the term '{term}'.\n"
         
         # If term is not in terms, run fuzzy engine
         if self.terms_rank is not None and term not in self.terms_rank:

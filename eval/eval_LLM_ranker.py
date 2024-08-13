@@ -32,7 +32,7 @@ from llm4crs.mapper import MapTool
 from llm4crs.query import QueryTool
 from llm4crs.ranking import RecModelTool, RankFeatureStoreTool, OpenAIRankingTool
 from llm4crs.buffer import CandidateBuffer
-from llm4crs.retrieval import SQLSearchTool, SimilarItemTool, FetchFeatureStoreItemsTool
+from llm4crs.retrieval import SQLSearchTool, SimilarItemTool, FetchFeatureStoreItemsTool, FetchAllTool
 
 
 
@@ -317,8 +317,8 @@ def main():
                 "BufferStoreTool": FuncToolWrapper(func=candidate_buffer.init_candidates, name=tool_names['BufferStoreTool'], 
                                                 desc=CANDIDATE_STORE_TOOL_DESC.format(**domain_map)),
                 "LookUpTool": QueryTool(name=tool_names['LookUpTool'], desc=LOOK_UP_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, buffer=candidate_buffer),
-                "HardFilterTool": FetchFeatureStoreItemsTool(name=tool_names['HardFilterTool'], desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, 
-                                                buffer=candidate_buffer, terms=SEARCH_TERMS_FILE),
+                "HardFilterTool": FetchAllTool(name=tool_names['HardFilterTool'], desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, 
+                                                buffer=candidate_buffer, terms_rec=SEARCH_TERMS_FILE, terms_rank=RANKING_SEARCH_TERMS_FILE),
                 "SoftFilterTool": SimilarItemTool(name=tool_names['SoftFilterTool'], desc=SOFT_FILTER_TOOL_DESC.format(**domain_map), item_sim_path=ITEM_SIM_FILE, 
                                                 item_corpus=item_corpus, buffer=candidate_buffer, top_ratio=args.similar_ratio),
                 "RankingTool": OpenAIRankingTool(name=tool_names["RankingTool"], desc=OPENAI_RANK_TOOL_DESC.format(**domain_map),
