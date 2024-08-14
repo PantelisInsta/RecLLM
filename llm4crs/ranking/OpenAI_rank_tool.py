@@ -59,11 +59,14 @@ class OpenAIRankingTool:
     def get_item_info(self, item_ids):
         """
         Given item IDs, get item information from the item corpus. Then structure the information into a string
-        that is appropriate to be fed to the OpenAI API for recommendation.
+        that is appropriate to be fed to the OpenAI API for recommendation. Also save the indexes of the items
+        for validation purposes.
         """
         # get item information
         info = self.item_corpus.convert_id_2_info(item_ids, self.col_names)
 
+        # save item indexes in list
+        self.item_idx = info['index']
         # organize item information into a string
         reco_info = []
         for i in range(len(item_ids)):
@@ -93,6 +96,20 @@ class OpenAIRankingTool:
         
         return item_ids, explanations
 
+
+    def check_id_validity(self, item_ids):
+        """
+        Check if the item IDs returned by the OpenAI API are valid.
+        """
+        # convert string to list
+        item_ids = item_ids.replace('[','').replace(']','').split(',')
+        # convert to integers
+        item_ids = [int(i) for i in item_ids]
+        # check if all IDs are valid
+        valid = all([i in self.item_idx for i in item_ids])
+        
+        return valid
+
     
     def run(self, inputs):
 
@@ -117,6 +134,12 @@ class OpenAIRankingTool:
 
         # split output in list of item IDs and detailed explanations
         item_ids, explanations = self.split_output(output)
+
+        # check if item IDs are valid
+        valid = self.check_id_validity(item_ids)
+        if not valid:
+            # log error
+            logger.error("Warning: LLM ranker returned invalid item IDs.")
 
         if self.use == 'reco':
             return explanations

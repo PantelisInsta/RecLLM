@@ -359,9 +359,12 @@ def main():
     else:
         raise ValueError("Not support for such agent.")
 
-
+    # time the evaluation
+    start = time.time()
     metrics, conversation = one_turn_conversation_eval(eval_data, bot, k=args.k)
-    
+    end = time.time()
+    print(f"Time taken: {end-start:.2f} seconds")
+
     # save conversation
     current_time = datetime.now().strftime("%Y%m%d%H%M%S")
     if args.save is not None:
