@@ -66,20 +66,23 @@ class FetchAllTool:
             self.terms_rank = None
 
         
-    def fetch_rec_items(self, term, content_type=['substitute']):
+    def fetch_rec_items(self, term, content_type= ['substitute','complementary','theme']):
         """
         Fetches items from the recommendation API of the feature store for a given search term.
         Returns a list of feature store product indexes.
         """
 
         # Get dataframe of items
-        df = fetch_retrieval_features(term, 12, ['substitute','complementary','theme'], FEATURES_REC)
+        df = fetch_retrieval_features(term, 12, content_type, FEATURES_REC)
         
         # for every content type, extract product indexes from product_ids column and convert to list of integers
         idx = []
         for i in range(len(content_type)):
            # get list where each element corresponds to a subquery
             subqueries = df[i]['products'].values[0]
+            # Check if there are no products for this content type
+            if subqueries is None:
+                continue
             # iterate over subquery to extract product indexes 
             for j in range(len(subqueries)):
                 subquery = ast.literal_eval(subqueries[j])

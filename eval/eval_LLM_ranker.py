@@ -156,7 +156,7 @@ class RecBotWrapper:
         self.num_rec = num_rec
 
     def run(self, question: str):
-        response = self.bot.run({"input": "I am looking for some" + question})
+        response = self.bot.run({"input": "I am looking for some " + question})
         return response
 
     def clear(self):
@@ -220,6 +220,8 @@ def one_turn_conversation_eval(data: List[Dict], agent: RecBotWrapper, k: int):
             print(d['question'])
             print(agent_msg)
         rank, base, names = get_ranks(pred, d)
+
+        tqdm.write(f"Rank: {rank}, Base: {base}, Names: {names}, Question: {d['question']}")
 
         # Iterate through rank and base and compute ndcg for both models
         if rank:
@@ -297,7 +299,7 @@ def main():
     # Combine root dir with data path
     args.data = os.path.join(ROOT_DIR, args.data) 
     print(args.data)
-    eval_data = read_jsonl(args.data)[:10]
+    eval_data = read_jsonl(args.data)[10:20]
 
     conversation = Conversation()
 

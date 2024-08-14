@@ -5,10 +5,14 @@ from loguru import logger
 TOOL_PROMPT_TEMPLATE = """You are an expert grocery item recommender. Your job is to \
 recommend items to shoppers based on their query and candidate item information. Please try to \
 understand user intent from the query and recommend items that best match what the shopper \
-wants based on the provided item information. You should always first return a python list of integer item IDs in the \
-order of recommendation. For example, if there are two recommendations with ids 481290 and 124259, \
-you should return [481290, 124259]. If there are more than {rec_num} items, return the top {rec_num} \
-recommendations. After the list, you should also provide a justification for the top {explain_top} picks. \
+wants based on the provided item information. You should always first return a python list of {rec_num} integer item IDs in the \
+order of recommendation. If there are more than {rec_num} items, return the top {rec_num} \
+recommendations. If there are less than {rec_num} items, return all the items in the order of recomendation. \
+For example, if there are two recommendations with ids 481290 and 124259, \
+you should return [481290, 124259]. Do not fake any item IDs. Do not discard items that don't seem relevant.
+Always return {rec_num} items, unless there are less than {rec_num} items available; in that case include all items in recommendation order. \n \
+After the list, you should also provide a justification for the top {explain_top} picks, along with a relevance score for them in regards to
+the user query, ranging from 0 for not relevant to 1 for highly relevant. \n \
 User query: {{query}} \n Candidate items: {{reco_info}} \n
 """
 
@@ -64,7 +68,7 @@ class OpenAIRankingTool:
         reco_info = []
         for i in range(len(item_ids)):
             # initialize string with index
-            s = f"Item {i+1}: "
+            s = f"Item: "
             for k in info.keys():
                 # include key and value in the string
                 s += f"{k}: {info[k][i]}\n"
