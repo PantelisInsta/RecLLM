@@ -228,21 +228,23 @@ def one_turn_conversation_eval(data: List[Dict], agent: RecBotWrapper, k: int):
         tqdm.write(f"Rank: {rank}, Base: {base}, Names: {names}, Question: {d['question']}")
 
         # Iterate through rank and base and compute ndcg for both models
+        dcg_llm = 0
         if rank:
-            score = 0
             for r in rank:
-                score += 1 / math.log2(r + 1)
-            ndcg.append(score)
-        else:
-            ndcg.append(0)
+                dcg_llm += 1 / math.log2(r + 1)
         
-        bs = 0
-        for b in base:
-            bs += 1 / math.log2(b + 1)
-        baseline.append(bs)
+        dcg_bs = 0
+        idcg = 0
+        for i, b in enumerate(base):
+            dcg_bs += 1 / math.log2(b + 1)
+            idcg += 1 / math.log2(i + 2)
+
+        ndcg.append(dcg_llm/idcg)
+        baseline.append(dcg_bs/idcg)
 
         tqdm.write(f"Sample {i}: NDCG@{k}={(sum(ndcg)/len(ndcg)):.4f}, Baseline={(sum(baseline)/len(baseline)):.4f}")
-        conversation.append({'context': d['question'], 'target': names, 'answer': pred})
+        conversation.append({'context': d['question'], 'target': names, 'answer': pred, 'LLM_ranker_placement': rank,
+                              'Rank_tool_placement': base, 'NDCG@20': round(sum(ndcg)/len(ndcg),4), 'Baseline': round(sum(baseline)/len(baseline),4)})
         
     final_ndcg = sum(ndcg) / len(ndcg)
     final_baseline = sum(baseline) / len(baseline)
