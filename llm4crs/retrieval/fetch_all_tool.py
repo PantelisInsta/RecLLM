@@ -24,21 +24,24 @@ class FetchAllTool:
         item_corpus (BaseGallery): The corpus of items.
         buffer (CandidateBuffer): The candidate bus to store candidates.
         desc (str): The description of the tool.
+        use_reco_tool (bool): Whether to use the recommendation tool for fetching items.
         terms_rec (str): Directory to a csv file containing recommendation API terms for fuzzy search.
         terms_rank (str): Directory to a csv file containing ranking API terms for fuzzy search.
         retailer_id (int): The retailer id.
     """
 
-    def __init__(self, name, desc, item_corpus, buffer, terms_rec=None, terms_rank=None, retailer_id=12):
+    def __init__(self, name, desc, item_corpus, buffer, use_reco_tool = True, 
+                 terms_rec=None, terms_rank=None, retailer_id=12):
         
         self.name = name
         self.desc = desc
         self.item_corpus = item_corpus
         self.buffer = buffer
+        self.use_reco_tool = use_reco_tool
         self.retailer_id = retailer_id
 
         # if terms_rec is not none, define a sentence transformer engine for fuzzy search
-        if terms_rec:
+        if terms_rec and use_reco_tool:
             # terms is a directory to a csv file. load that file
             terms_rec = pd.read_csv(terms_rec)
             # convert terms to ndarray
@@ -143,20 +146,24 @@ class FetchAllTool:
         Updates the candidate bus with new candidates from the recommendation and ranking APIs of the feature store.
         """
         info = ""
-        # If term is not in terms, run fuzzy engine
-        if self.terms_rec is not None and term not in self.terms_rec:
-            new_term = self.fuzzy_search(term, self.engine_rec, API = "Recommendation")
-            info += f"System: Fuzzy search replaced term '{term}' with '{new_term}' in the recommendation tool.\n"
-            self.term_rec = new_term
+        if self.use_reco_tool:
+            # If term is not in terms, run fuzzy engine
+            if self.terms_rec is not None and term not in self.terms_rec:
+                new_term = self.fuzzy_search(term, self.engine_rec, API = "Recommendation")
+                info += f"System: Fuzzy search replaced term '{term}' with '{new_term}' in the recommendation tool.\n"
+                self.term_rec = new_term
+            else:
+                self.term_rec = term
+            
+            # Fetch items from recommendation API
+            try:
+                rec_indexes = self.fetch_rec_items(self.term_rec)
+            except:
+                rec_indexes = []
+                info += f"System: No items found in the recommendation tool with the term '{term}'.\n"
         else:
-            self.term_rec = term
-        
-        # Fetch items from recommendation API
-        try:
-            rec_indexes = self.fetch_rec_items(self.term_rec)
-        except:
             rec_indexes = []
-            info += f"System: No items found in the recommendation tool with the term '{term}'.\n"
+            info += f"System: The recommendation tool is disabled.\n"
         
         # If term is not in terms, run fuzzy engine
         if self.terms_rank is not None and term not in self.terms_rank:

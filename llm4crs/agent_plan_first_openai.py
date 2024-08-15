@@ -601,7 +601,7 @@ class CRSAgentPlanFirstOpenAI:
         # Call the agent to generate the plan
         llm_output = self.agent.call(user_prompt=prompt)
         end = time.time()
-        logger.debug(f"OpenAI API call latency: {end - start} s.")
+        logger.debug(f"LLM orchestrator call latency: {end - start:.2f} s.")
         # Parse the llm output to interpret it
         finish, info = self._parse_llm_output(llm_output)
 

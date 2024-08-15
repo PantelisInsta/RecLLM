@@ -151,9 +151,8 @@ class RecBotWrapper:
     """
     Wrapper for RecAI, used for single-turn ranking.
     """
-    def __init__(self, bot: CRSAgent, num_rec):
+    def __init__(self, bot: CRSAgent):
         self.bot = bot
-        self.num_rec = num_rec
 
     def run(self, question: str):
         response = self.bot.run({"input": "I am looking for some " + question})
@@ -214,7 +213,12 @@ def one_turn_conversation_eval(data: List[Dict], agent: RecBotWrapper, k: int):
         # candidates = neg_item_sample(corpus, d['context'], d['target'], k-1)
         agent_msg = agent.run(d['question'])
         # convert agent_msg to list of integers
-        pred = convert_string_to_int_list(agent_msg)
+        try:
+            pred = convert_string_to_int_list(agent_msg)
+        except:
+            print(f"Error in sample {i}")
+            print(agent_msg)
+            continue
         
         if os.environ.get("DEBUG", '0') == '1':
             print(d['question'])
@@ -252,7 +256,6 @@ def main():
     
     parser = argparse.ArgumentParser("Evaluator")
     parser.add_argument("--data", type=str, default="data/ranking_data.jsonl")
-    parser.add_argument("--max_turns", type=int, default=5, help="max turns limit for evaluation")
     parser.add_argument("--save", type=str, help='path to save conversation text')
     parser.add_argument('--engine', type=str, default='gpt-4',
                     help='Engine of OpenAI API to use as user simulator. The default is gpt-4') 
@@ -262,7 +265,7 @@ def main():
 
     # parser.add_argument('--domain', type=str, default='game')
     parser.add_argument('--agent', default='recbot',type=str, help='agent type, "recbot" is our method and others are baselines')
-    parser.add_argument('--num_rec', type=int, default=5,  help='number of items to be recommended')
+
 
     # recbot-agent
     parser.add_argument('--max_candidate_num', type=int, default=1000, help="Number of max candidate number of buffer")
@@ -270,7 +273,9 @@ def main():
     parser.add_argument('--rank_num', type=int, default=100, help="Number of games given by ranking tool")
     parser.add_argument('--max_output_tokens', type=int, default=512, help="Max number of tokens in LLM output")
     parser.add_argument('--bot_type', type=str, default='chat', choices=['chat', 'completion'],
-                    help='Type OpenAI models. The default is chat. Options [completion, chat]') 
+                    help='Type OpenAI models. The default is chat. Options [completion, chat]')
+    parser.add_argument("--use_reco_tool", action="store_true", help="Includes items from recommendation API in fetch all tool")
+    
 
     # chat history shortening
     parser.add_argument('--enable_shorten', type=int, choices=[0,1], default=0, help="Whether to enable shorten chat history with LLM")
@@ -299,7 +304,7 @@ def main():
     # Combine root dir with data path
     args.data = os.path.join(ROOT_DIR, args.data) 
     print(args.data)
-    eval_data = read_jsonl(args.data)[10:20]
+    eval_data = read_jsonl(args.data)[20:30]
 
     conversation = Conversation()
 
@@ -320,7 +325,7 @@ def main():
                                                 desc=CANDIDATE_STORE_TOOL_DESC.format(**domain_map)),
                 "LookUpTool": QueryTool(name=tool_names['LookUpTool'], desc=LOOK_UP_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, buffer=candidate_buffer),
                 "HardFilterTool": FetchAllTool(name=tool_names['HardFilterTool'], desc=FEATURE_STORE_FILTER_TOOL_DESC.format(**domain_map), item_corpus=item_corpus, 
-                                                buffer=candidate_buffer, terms_rec=SEARCH_TERMS_FILE, terms_rank=RANKING_SEARCH_TERMS_FILE),
+                                                buffer=candidate_buffer, terms_rec=SEARCH_TERMS_FILE, terms_rank=RANKING_SEARCH_TERMS_FILE, use_reco_tool=args.use_reco_tool),
                 "SoftFilterTool": SimilarItemTool(name=tool_names['SoftFilterTool'], desc=SOFT_FILTER_TOOL_DESC.format(**domain_map), item_sim_path=ITEM_SIM_FILE, 
                                                 item_corpus=item_corpus, buffer=candidate_buffer, top_ratio=args.similar_ratio),
                 "RankingTool": OpenAIRankingTool(name=tool_names["RankingTool"], desc=OPENAI_RANK_TOOL_DESC.format(**domain_map),
@@ -354,7 +359,7 @@ def main():
                     critic=critic, reflection_limits=args.reflection_limits, enable_summarize=False)   # reflexion
         
         bot.init_agent()
-        bot = RecBotWrapper(bot, args.num_rec)
+        bot = RecBotWrapper(bot)
 
     else:
         raise ValueError("Not support for such agent.")

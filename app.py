@@ -156,6 +156,13 @@ parser.add_argument(
     help="Specify json file to load user profile from",
 )
 
+# whether to use recommendation API in the fetch all tool
+parser.add_argument(
+    "--use_reco_tool",
+    action="store_true",
+    help="Use recommendation API in the fetch all tool",
+)
+
 args = parser.parse_args()
 
 # Define map that replaces {item} for domain specific item
@@ -219,6 +226,7 @@ elif args.LLM_ranker:
         buffer=candidate_buffer,
         terms_rec=SEARCH_TERMS_FILE,
         terms_rank=RANKING_SEARCH_TERMS_FILE,
+        use_reco_tool=args.use_reco_tool,
     )
     ranking_tool = OpenAIRankingTool(
         name=tool_names["RankingTool"],

@@ -1,6 +1,7 @@
 # Ranking tool using OpenAI API
 
 from loguru import logger
+import time
 
 TOOL_PROMPT_TEMPLATE = """You are an expert grocery item recommender. Your job is to \
 recommend items to shoppers based on their query and candidate item information. Please try to \
@@ -130,13 +131,16 @@ class OpenAIRankingTool:
         prompt = self.prompt.format(query=query,reco_info=reco_str)
 
         # call OpenAI API to get recommendations
+        start = time.time()
         output = agent.call(prompt,max_tokens=1000)
+        end = time.time()
+        logger.debug(f"LLM ranker call latency: {end - start:.2f} s.")
 
         # split output in list of item IDs and detailed explanations
-        item_ids, explanations = self.split_output(output)
+        item_idx, explanations = self.split_output(output)
 
         # check if item IDs are valid
-        valid = self.check_id_validity(item_ids)
+        valid = self.check_id_validity(item_idx)
         if not valid:
             # log error
             logger.error("Warning: LLM ranker returned invalid item IDs.")
@@ -144,6 +148,6 @@ class OpenAIRankingTool:
         if self.use == 'reco':
             return explanations
         elif self.use == 'eval':
-            return item_ids
+            return item_idx
         else:
             return "Invalid use case."
