@@ -289,7 +289,7 @@ class CRSAgentPlanFirstOpenAI:
         tools: Dict[str, Callable],
         candidate_buffer,
         item_corpus,
-        engine: str = "text-davinci-003",
+        engine: str = "gpt-4o",
         bot_type: str = "completion",
         enable_shorten: bool = False,
         shorten_strategy: str = "pure",

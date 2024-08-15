@@ -52,6 +52,12 @@ def write_jsonl(obj, fpath: str):
             f.write('\n')
 
 
+def append_jsonl(obj, fpath: str):
+    with open(fpath, 'a') as f:
+        json.dump(obj, f)
+        f.write('\n')
+
+
   
 class TimeoutError(Exception):  
     """Custom timeout error exception class"""  
@@ -199,7 +205,7 @@ def convert_string_to_int_list(string):
     return [int(x.strip()) for x in ids_str]
 
 
-def one_turn_conversation_eval(data: List[Dict], agent: RecBotWrapper, k: int):
+def one_turn_conversation_eval(data: List[Dict], agent: RecBotWrapper, k: int, save_path: str):
     """
     Iterates through the data and evaluates the agent's performance in one-turn
     ranking conversations. Returns the NDCG@k metric and the conversation history.
@@ -243,8 +249,11 @@ def one_turn_conversation_eval(data: List[Dict], agent: RecBotWrapper, k: int):
         baseline.append(dcg_bs/idcg)
 
         tqdm.write(f"Sample {i}: NDCG@{k}={(sum(ndcg)/len(ndcg)):.4f}, Baseline={(sum(baseline)/len(baseline)):.4f}")
-        conversation.append({'context': d['question'], 'target': names, 'answer': pred, 'LLM_ranker_placement': rank,
-                              'Rank_tool_placement': base, 'NDCG@20': round(sum(ndcg)/len(ndcg),4), 'Baseline': round(sum(baseline)/len(baseline),4)})
+        line = {'context': d['question'], 'target': names, 'answer': pred, 'LLM_ranker_placement': rank,
+                              'Rank_tool_placement': base, 'NDCG@20': round(sum(ndcg)/len(ndcg),4), 'Baseline': round(sum(baseline)/len(baseline),4)}
+        conversation.append(line)
+        # add line to existing jsonl file
+        append_jsonl(line, save_path)
         
     final_ndcg = sum(ndcg) / len(ndcg)
     final_baseline = sum(baseline) / len(baseline)
@@ -259,8 +268,8 @@ def main():
     parser = argparse.ArgumentParser("Evaluator")
     parser.add_argument("--data", type=str, default="data/ranking_data.jsonl")
     parser.add_argument("--save", type=str, help='path to save conversation text')
-    parser.add_argument('--engine', type=str, default='gpt-4',
-                    help='Engine of OpenAI API to use as user simulator. The default is gpt-4') 
+    parser.add_argument('--engine', type=str, default='gpt-4o',
+                    help='Engine of OpenAI API to use as user simulator. The default is gpt-4o') 
     parser.add_argument("--timeout", type=int, default=5, help="Timeout threshold when calling OAI. (seconds)")
     parser.add_argument("--k", type=int, default=20, help="NDCG cutoff")
     parser.add_argument("--seed", type=int, default=2024, help="random seed")
@@ -307,6 +316,13 @@ def main():
     args.data = os.path.join(ROOT_DIR, args.data) 
     print(args.data)
     eval_data = read_jsonl(args.data)[20:30]
+
+    # save path
+    current_time = datetime.now().strftime("%Y%m%d%H%M%S")
+    if args.save is not None:
+        save_path = args.save
+    else:
+        save_path = os.path.join(os.path.dirname(args.data), f"saved_conversations_{args.agent}_{current_time}_{os.path.basename(args.data)}")
 
     conversation = Conversation()
 
@@ -368,17 +384,11 @@ def main():
 
     # time the evaluation
     start = time.time()
-    metrics, conversation = one_turn_conversation_eval(eval_data, bot, k=args.k)
+    metrics, conversation = one_turn_conversation_eval(eval_data, bot, k=args.k, save_path=save_path)
     end = time.time()
     print(f"Time taken: {end-start:.2f} seconds")
 
-    # save conversation
-    current_time = datetime.now().strftime("%Y%m%d%H%M%S")
-    if args.save is not None:
-        save_path = args.save
-    else:
-        save_path = os.path.join(os.path.dirname(args.data), f"saved_conversations_{args.agent}_{current_time}_{os.path.basename(args.data)}")
-    write_jsonl(conversation, save_path)
+    #write_jsonl(conversation, save_path)
     print("Conversation history saved in {}.".format(save_path))
 
     print(metrics)
