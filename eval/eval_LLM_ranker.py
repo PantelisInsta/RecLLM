@@ -315,7 +315,7 @@ def main():
     # Combine root dir with data path
     args.data = os.path.join(ROOT_DIR, args.data) 
     print(args.data)
-    eval_data = read_jsonl(args.data)[20:30]
+    eval_data = read_jsonl(args.data)
 
     # save path
     current_time = datetime.now().strftime("%Y%m%d%H%M%S")
