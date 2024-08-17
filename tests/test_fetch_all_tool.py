@@ -29,7 +29,7 @@ candidate_buffer = CandidateBuffer(item_corpus)
 # Initialize the fetchFeatureStore tool
 fetch_tool = FetchAllTool('FeatureStoreItemTool',
                           'Fetches items from the feature store',
-                          item_corpus, candidate_buffer)
+                          item_corpus, candidate_buffer, use_reco_tool=False)
 
 # run the fetch tool
 fetch_tool.run(term)
