@@ -98,16 +98,16 @@ class OpenAIRankingTool:
         return item_ids, explanations
 
 
-    def check_id_validity(self, item_ids):
+    def check_id_validity(self, item_idx):
         """
-        Check if the item IDs returned by the OpenAI API are valid.
+        Check if the instacart product IDs returned by the OpenAI API are valid.
         """
         # convert string to list
-        item_ids = item_ids.replace('[','').replace(']','').split(',')
+        item_idx = item_idx.replace('[','').replace(']','').split(',')
         # convert to integers
-        item_ids = [int(i) for i in item_ids]
+        item_idx = [int(i) for i in item_idx]
         # check if all IDs are valid
-        valid = all([i in self.item_idx for i in item_ids])
+        valid = all([i in self.item_idx for i in item_idx])
         
         return valid
 

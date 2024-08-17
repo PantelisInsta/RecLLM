@@ -121,8 +121,28 @@ class FetchAllTool:
         # remove duplicate products
         items_rank = items_rank.drop_duplicates(subset='product_id')
 
+        # convert product_id (index) to candidate buffer id
+        items_rank['id'] = items_rank['product_id'].apply(self.item_corpus.convert_index_2_id)
+        
+        # get dictionary of dictionaries with detailed information about the items
+        query_candidate_info = {row['id']: self.get_query_candidate_info(row) for _, row in items_rank.iterrows()}
+
+        # save detailed candidate-query information to candidate buffer
+        self.buffer.update_query_candidate_info(query_candidate_info)
+
         # return product ids column of items_rank as list of integers
         return items_rank.product_id.tolist()
+
+    def get_query_candidate_info(self, data, columns = ['global_ctr','retailer_ctr','relevance_score'],
+                                  descriptions = ['Global conversion rate','Retailer conversion rate','Relevance score']):
+        """
+        Parses a Series object to extract all relevant information about item-query interactions.
+        """
+        info = {}
+        for i, column in enumerate(columns):
+            info[descriptions[i]] = data[column]
+
+        return info
 
     def convert_index_2_id(self, indexes):
         """

@@ -18,6 +18,7 @@ class CandidateBuffer:
         self.item_corpus = item_corpus # full corpus of items
         self.init_memory = []   # to store user given candidates, deprecated
         self.memory = list(range(1, len(self.item_corpus))) # to store current candidates
+        self.query_candidate_info = None # to store the query-specific candidate info
         self.plans = [] # to store the plans used to get the current candidates
         self.failed_plans = [] # to store the failed plans, for replanning
         self.num_limit = num_limit
@@ -113,6 +114,16 @@ class CandidateBuffer:
         
         # keep track of the tool and candidates length
         self.plans.append((tool, len(candidates)))
+
+
+    def update_query_candidate_info(self, query_candidate_info: Dict[int, Dict]) -> None:
+        """
+        Update the query-specific candidate information in the buffer.
+        
+        Args:
+            query_candidate_info (Dict[str, Any]): query-specific candidate information
+        """
+        self.query_candidate_info = query_candidate_info
 
 
     def get(self) -> List[int]:
