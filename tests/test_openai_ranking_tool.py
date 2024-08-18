@@ -4,7 +4,7 @@
 import setup_env
 
 # import relevant modules
-from llm4crs.retrieval.fetch_tool import FetchFeatureStoreItemsTool
+from llm4crs.retrieval.fetch_all_tool import FetchAllTool
 from llm4crs.ranking.OpenAI_rank_tool import OpenAIRankingTool
 from llm4crs.buffer import CandidateBuffer
 from llm4crs.corpus import BaseGallery
@@ -30,9 +30,9 @@ item_corpus = BaseGallery(
 candidate_buffer = CandidateBuffer(item_corpus)
 
 # Initialize the fetchFeatureStore tool
-fetch_tool = FetchFeatureStoreItemsTool('FeatureStoreItemTool',
-                                        item_corpus, candidate_buffer,
-                                        'Fetches items from the feature store')
+fetch_tool = FetchAllTool('FeatureStoreItemTool',
+                          'Fetches items from the feature store',
+                          item_corpus, candidate_buffer, use_reco_tool=False)
 
 # Initialize the OpenAIRanking tool
 rank_tool = OpenAIRankingTool('OpenAIRankingTool',

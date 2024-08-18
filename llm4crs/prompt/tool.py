@@ -145,3 +145,29 @@ This tool is a big tool box consisting of all tools metioned above. The tool box
 The input is a List of Dict, indicating the tool using plan and input to each tool. There are two keys "tool_name" and "input" in Dict. 
 The format should be like: "[{'tool_name': TOOL-1, 'input': INPUT-1}, ..., {'tool_name': TOOL-N, 'input': INPUT-N} ]".
 """
+
+
+LLM_RANKER_PROMPT_TEMPLATE = """You are an expert grocery item recommender. Your job is to \
+recommend items to shoppers based on their query and candidate item information. Please try to \
+understand user intent from the query and recommend items that best match what the shopper \
+wants based on the provided item information. You should always first return a python list of {rec_num} integer item indexes in the \
+order of recommendation. If there are more than {rec_num} items, return the top {rec_num} \
+recommendations. If there are less than {rec_num} items, return all the items in the order of recomendation. \
+For example, if there are two recommendations with indexes 481290 and 124259, \
+you should return [481290, 124259]. Do not fake any item indexes. Do not discard items that don't seem relevant.
+Always return {rec_num} items, unless there are less than {rec_num} items available; in that case include all items in recommendation order. \n \
+After the list, you should also provide a justification for the top {explain_top} picks, along with a relevance score for them in regards to
+the user query, ranging from 0 for not relevant to 1 for highly relevant. \n \
+To help you decide, there is additional information about the relevance of each candidate items to the query, \
+provided by an expert system. These are: \n {{qc_info}} \n \
+Now please make your recommendations, given the user query and candidate item information below. \n \
+User query: {{query}} \n Candidate items: \n {{reco_info}}
+"""
+
+ITEM_QUERY_ATTRIBUTE_EXPLANATIONS = """
+Global and retailer click-through rate: Probability that the item was clicked (chosen/converted) in searches it appeared, for all retailiers \
+and the specific retailer respectively. \n \
+Relevance score: A score indicating how relevant the item is to the user query. Ranges from 0 to 1. Please pay attention to this. \n \
+Exact match, Strong substitute, Weak substitute, Close complement, Remote complement: Flags that describe the relationship between the item \
+and the user query in more detail. Range from 0 to 1. For example, an exact match would have a value of 1, while a remote complement would have a value of 0. \n \
+"""

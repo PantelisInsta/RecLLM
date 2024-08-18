@@ -2,20 +2,8 @@
 
 from loguru import logger
 import time
+from llm4crs.prompt import LLM_RANKER_PROMPT_TEMPLATE, ITEM_QUERY_ATTRIBUTE_EXPLANATIONS
 
-TOOL_PROMPT_TEMPLATE = """You are an expert grocery item recommender. Your job is to \
-recommend items to shoppers based on their query and candidate item information. Please try to \
-understand user intent from the query and recommend items that best match what the shopper \
-wants based on the provided item information. You should always first return a python list of {rec_num} integer item IDs in the \
-order of recommendation. If there are more than {rec_num} items, return the top {rec_num} \
-recommendations. If there are less than {rec_num} items, return all the items in the order of recomendation. \
-For example, if there are two recommendations with ids 481290 and 124259, \
-you should return [481290, 124259]. Do not fake any item IDs. Do not discard items that don't seem relevant.
-Always return {rec_num} items, unless there are less than {rec_num} items available; in that case include all items in recommendation order. \n \
-After the list, you should also provide a justification for the top {explain_top} picks, along with a relevance score for them in regards to
-the user query, ranging from 0 for not relevant to 1 for highly relevant. \n \
-User query: {{query}} \n Candidate items: {{reco_info}} \n
-"""
 
 class OpenAIRankingTool:
     """
@@ -51,7 +39,7 @@ class OpenAIRankingTool:
         
         self.col_names = col_names
 
-        prompt_template = TOOL_PROMPT_TEMPLATE
+        prompt_template = LLM_RANKER_PROMPT_TEMPLATE
 
         # replace known quantities in prompt
         self.prompt = prompt_template.format(rec_num=self.rec_num, explain_top=self.explain_top)
@@ -70,12 +58,20 @@ class OpenAIRankingTool:
         self.item_idx = info['index']
         # organize item information into a string
         reco_info = []
-        for i in range(len(item_ids)):
+        for i, id in enumerate(item_ids):
             # initialize string with index
             s = f"Item: "
             for k in info.keys():
                 # include key and value in the string
                 s += f"{k}: {info[k][i]}\n"
+            # if query-item information is available, include it
+            try:
+                qc_info = self.buffer.query_candidate_info[id]
+                s += f"Query-item information: \n"
+                for k in qc_info.keys():
+                    s += f"{k}: {qc_info[k]}\n"
+            except:
+                pass
             reco_info.append(s)
 
         # join and add new line between each item information
@@ -128,7 +124,7 @@ class OpenAIRankingTool:
         reco_str = self.get_item_info(item_ids)
 
         # compile prompt without explicit calling
-        prompt = self.prompt.format(query=query,reco_info=reco_str)
+        prompt = self.prompt.format(query=query,reco_info=reco_str,qc_info=ITEM_QUERY_ATTRIBUTE_EXPLANATIONS)
 
         # call OpenAI API to get recommendations
         start = time.time()

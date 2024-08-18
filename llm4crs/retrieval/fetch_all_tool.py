@@ -12,6 +12,11 @@ from llm4crs.utils import SentBERTEngine
 FEATURES_REC = ['retailer_name', 'products']
 FEATURES_RANK = ['ITEMS']
 
+QUERY_CANDIDATE_INFO = ['global_ctr','retailer_ctr','relevance_score', 'exact_match', 'strong_substitute',
+                        'weak_subsitute', 'close_complement', 'remote_complement']
+QUERY_CANDIDATE_INFO_DESCRIPTIONS = ['Global click-through rate','Retailer click-through rate','Relevance score',
+                        'Exact match', 'Strong substitute', 'Weak substitute', 'Close complement', 'Remote complement']
+
 class FetchAllTool:
     """
     Defines a tool to fetch items from the recommendation and ranking APIs of the feature store.
@@ -133,8 +138,8 @@ class FetchAllTool:
         # return product ids column of items_rank as list of integers
         return items_rank.product_id.tolist()
 
-    def get_query_candidate_info(self, data, columns = ['global_ctr','retailer_ctr','relevance_score'],
-                                  descriptions = ['Global conversion rate','Retailer conversion rate','Relevance score']):
+    def get_query_candidate_info(self, data, columns = QUERY_CANDIDATE_INFO,
+                                descriptions = QUERY_CANDIDATE_INFO_DESCRIPTIONS):
         """
         Parses a Series object to extract all relevant information about item-query interactions.
         """
