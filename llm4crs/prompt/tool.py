@@ -154,18 +154,21 @@ wants based on the provided item information. You should always first return a p
 order of recommendation. If there are more than {rec_num} items, return the top {rec_num} \
 recommendations. If there are less than {rec_num} items, return all the items in the order of recomendation. \
 For example, if there are two recommendations with indexes 481290 and 124259, \
-you should return [481290, 124259]. Do not fake any item indexes. Do not discard items that don't seem relevant.
-Always return {rec_num} items, unless there are less than {rec_num} items available; in that case include all items in recommendation order. \n \
+you should return [481290, 124259]. Always return {rec_num} items, unless there are less than {rec_num} items available; in that case include all items in recommendation order. \n \
 After the list, you should also provide a justification for the top {explain_top} picks, along with a relevance score for them in regards to
-the user query, ranging from 0 for not relevant to 1 for highly relevant. \n \
+the user query, ranging from 0 for not relevant to 1 for highly relevant. \n \n \
 To help you decide, there is additional information about the relevance of each candidate items to the query, \
 provided by an expert system. These are: \n {{qc_info}} \n \
+{{user_info}} \n \
 Now please make your recommendations, given the user query and candidate item information below. \n \
-User query: {{query}} \n Candidate items: \n {{reco_info}}
+User query: {{query}} \n Candidate items: \n \n {{reco_info}} \n \
+
+Do not fake any item indexes. Do not add placeholder indexes like 1,2,3 if there are less than {rec_num} items available. \
+Do not discard items that don't seem relevant. Go! \
 """
 
 ITEM_QUERY_ATTRIBUTE_EXPLANATIONS = """
-Global and retailer click-through rate: Probability that the item was clicked (chosen/converted) in searches it appeared, for all retailiers \
+Global and retailer click-through rate: Probability that the item was clicked (chosen/converted) in searches it appeared, for all retailers \
 and the specific retailer respectively. \n \
 Relevance score: A score indicating how relevant the item is to the user query. Ranges from 0 to 1. Please pay attention to this. \n \
 Exact match, Strong substitute, Weak substitute, Close complement, Remote complement: Flags that describe the relationship between the item \

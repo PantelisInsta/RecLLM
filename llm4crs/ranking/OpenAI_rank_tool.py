@@ -104,8 +104,50 @@ class OpenAIRankingTool:
         item_idx = [int(i) for i in item_idx]
         # check if all IDs are valid
         valid = all([i in self.item_idx for i in item_idx])
+
+        # only keep valid IDs
+        item_idx = [i for i in item_idx if i in self.item_idx]
         
-        return valid
+        return valid, str(item_idx)
+
+    def format_user_info(self, user_info):
+        """
+        Format user information to be included in the prompt.
+        """
+        if user_info is None:
+            return ""
+        
+        # format user information
+        user_info_str = "In addition, here is some user preference information that might help in your recommendations:\n \n"
+
+        # get list of products that user already has in the basket and print them along with their product id
+        try:
+            product_idx = user_info['CART_PRODUCTS']; del user_info['CART_PRODUCTS']
+            product_names = user_info['CART_PRODUCT_NAMES']; del user_info['CART_PRODUCT_NAMES']
+
+            user_info_str += "Products that are already in the user's basket; do not include these items in the recommendations:\n"
+            for name, idx in zip(product_names,product_idx):
+                user_info_str += f"{name}; index: {idx}\n"
+        except:
+            pass
+
+        try:
+            elasticity = user_info['ELASTICITY']; del user_info['ELASTICITY']
+            # raise error if elasticity is not a float
+            if not isinstance(elasticity,float):
+                raise ValueError("Elasticity is not a float.")
+            else:
+                user_info_str += "\n Elasticity is a variable from 0 to 1 that determines how sensitive the user is to high prices. 0 means not sensitive while 1 means very sensitive. \n"
+                user_info_str += f"User elasticity: {elasticity}\n \n"
+        except:
+            pass
+
+        # include other user information
+        user_info_str += "Other user preference information, which range from 0 to 1, 0 meaning that this attribute does not make a difference for the user and 1 meaning that the user has a strong preference for this attribute:\n"
+        for k in user_info.keys():
+            user_info_str += f"{k}: {user_info[k]}\n"
+
+        return user_info_str
 
     
     def run(self, inputs):
@@ -123,8 +165,15 @@ class OpenAIRankingTool:
         # get item information
         reco_str = self.get_item_info(item_ids)
 
+        # get user information
+        user_info = self.buffer.user_info
+
+        # format user info string
+        user_info_str = self.format_user_info(user_info)
+
         # compile prompt without explicit calling
-        prompt = self.prompt.format(query=query,reco_info=reco_str,qc_info=ITEM_QUERY_ATTRIBUTE_EXPLANATIONS)
+        prompt = self.prompt.format(query=query,reco_info=reco_str,qc_info=ITEM_QUERY_ATTRIBUTE_EXPLANATIONS,
+                                    user_info=user_info_str)
 
         # call OpenAI API to get recommendations
         start = time.time()
@@ -136,7 +185,7 @@ class OpenAIRankingTool:
         item_idx, explanations = self.split_output(output)
 
         # check if item IDs are valid
-        valid = self.check_id_validity(item_idx)
+        valid, item_idx = self.check_id_validity(item_idx)
         if not valid:
             # log error
             logger.error("Warning: LLM ranker returned invalid item IDs.")
