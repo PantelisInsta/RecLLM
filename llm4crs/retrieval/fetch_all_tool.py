@@ -6,12 +6,12 @@ import numpy as np
 from loguru import logger
 import ast
 
-from llm4crs.utils.feature_store import fetch_retrieval_features, fetch_recall_rank_features
+from llm4crs.utils.feature_store import fetch_retrieval_features, fetch_recall_rank_features_user_seq
 from llm4crs.utils import SentBERTEngine
 
 FEATURES_REC = ['retailer_name', 'products']
-FEATURES_RANK = ['ITEMS']
-
+FEATURES_RANK = ['ITEMS', 'CART_PRODUCTS', 'CART_PRODUCT_NAMES', 'ALCOHOLIC', 'ORGANIC', 'KOSHER', 'VEGAN', 
+                 'VEGETARIAN', 'GLUTEN_FREE', 'SUGAR_FREE', 'LOW_FAT', 'FAT_FREE', 'ELASTICITY']
 QUERY_CANDIDATE_INFO = ['global_ctr','retailer_ctr','relevance_score', 'exact_match', 'strong_substitute',
                         'weak_subsitute', 'close_complement', 'remote_complement']
 QUERY_CANDIDATE_INFO_DESCRIPTIONS = ['Global click-through rate','Retailer click-through rate','Relevance score',
@@ -110,7 +110,7 @@ class FetchAllTool:
         """
 
         # Get data
-        rank = fetch_recall_rank_features(term,retailer_id=self.retailer_id,features=FEATURES_RANK)
+        rank = fetch_recall_rank_features_user_seq(term,retailer_id=self.retailer_id,features=FEATURES_RANK)
         data = list(rank['ITEMS'].values[0])
 
         # Parse data to extract items
@@ -119,6 +119,9 @@ class FetchAllTool:
             # Remove the outer quotes and use ast.literal_eval to safely convert to dict
             dict_item = ast.literal_eval(item.strip('"'))
             parsed_data.append(dict_item)
+
+        # save user info to candidate buffer (for now)
+        self.buffer.user_info = {key: rank[key].values[0] for key in rank.columns if key not in ['retailer_id','term','ITEMS']}
 
         # make dataframe
         items_rank = pd.DataFrame(parsed_data)

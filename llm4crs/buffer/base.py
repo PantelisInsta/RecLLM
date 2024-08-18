@@ -19,6 +19,7 @@ class CandidateBuffer:
         self.init_memory = []   # to store user given candidates, deprecated
         self.memory = list(range(1, len(self.item_corpus))) # to store current candidates
         self.query_candidate_info = None # to store the query-specific candidate info
+        self.user_info = None # to store user info like preferences and cart items
         self.plans = [] # to store the plans used to get the current candidates
         self.failed_plans = [] # to store the failed plans, for replanning
         self.num_limit = num_limit
