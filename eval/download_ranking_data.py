@@ -9,6 +9,7 @@ import pandas as pd
 import ast
 import json
 import os
+import random
 
 # Set up environment variables that define data paths
 from llm4crs.environ_variables import *
@@ -21,12 +22,13 @@ data = []
 N = 1000             # number of data points to fetch
 RETAILER_ID = 12     # retailer id
 features = ['ITEMS'] # features to fetch
+seed = 42            # random seed
 
 # load search terms for ranking tool (csv file)
 search_terms = pd.read_csv(RANKING_SEARCH_TERMS_FILE)
 
-# randomly select N search terms
-search_terms = search_terms.sample(N)
+# sample N search terms using the COUNT column as weights
+search_terms = search_terms.sample(n=N, weights=search_terms['COUNT(*)'], random_state=seed)
 
 # fetch data for each search term and save question, item ids, names and target
 # to json file 

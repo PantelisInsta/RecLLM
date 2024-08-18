@@ -64,7 +64,7 @@ class FetchAllTool:
             # terms is a directory to a csv file. load that file
             terms_rank = pd.read_csv(terms_rank)
             # convert terms to ndarray
-            self.terms_rank = np.array(terms_rank).flatten()
+            self.terms_rank = np.array(terms_rank['TERM']).flatten()
             
             self.engine_rank = SentBERTEngine(self.terms_rank, 
                                          list(range(len(self.terms_rank))), 
@@ -145,7 +145,10 @@ class FetchAllTool:
         """
         info = {}
         for i, column in enumerate(columns):
-            info[descriptions[i]] = data[column]
+            try:
+                info[descriptions[i]] = data[column]
+            except:
+                pass
 
         return info
 
