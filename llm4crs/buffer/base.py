@@ -20,6 +20,7 @@ class CandidateBuffer:
         self.memory = list(range(1, len(self.item_corpus))) # to store current candidates
         self.query_candidate_info = None # to store the query-specific candidate info
         self.user_info = None # to store user info like preferences and cart items
+        self.basket_items = {} # to store candidate basket items
         self.plans = [] # to store the plans used to get the current candidates
         self.failed_plans = [] # to store the failed plans, for replanning
         self.num_limit = num_limit
@@ -148,6 +149,13 @@ class CandidateBuffer:
         self.failed_plans = []
         self.similarity = None
 
+
+    def store_and_clear(self, category: str) -> None:
+        """
+        Stores the current candidates in the dictionary of basket items and clears the buffer.
+        """
+        self.basket_items[category] = self.memory
+        self.clear()
 
 
     def replan(self, inputs: str) -> str:
