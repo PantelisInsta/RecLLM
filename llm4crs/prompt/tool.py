@@ -10,6 +10,7 @@ TOOL_NAMES = {
     "HardFilterTool": "{Item} Properties Filtering Tool",
     "SoftFilterTool": "{Item} Similarity Filtering Tool",
     "RankingTool": "{Item} Candidates Ranking Tool",
+    "BasketTool": "{Item} Basket Compilation Tool",
     "MapTool": "Mapping Tool",
 }
 
@@ -102,6 +103,14 @@ The input of the tool should be an integer indicating the number of {item}s huma
 The default value is 5 if human doesn't give.
 """
 
+BASKET_TOOL_DESC = """
+The tool is useful to compile a basket of {item}s to recommend to the user. It has access to items options for each category \
+stored in the candidate buffer, and it calls the OpenAI API to generate a list of {item} indexes to recommend, one item from each category. \
+The input to the tool should be a Python dictionary that contains with two key-value pairs: \
+one pair should have 'categories' as key and a list of items categories in string format as value (e.g. ['fruit', 'vegetable', 'meat']). \
+The other pair should have 'budget' as key and an float as value, indicating the user's budget. \
+"""
+
 
 _TOOL_DESC = {
     "CANDIDATE_STORE_TOOL_DESC": CANDIDATE_STORE_TOOL_DESC,
@@ -112,6 +121,7 @@ _TOOL_DESC = {
     "RANKING_TOOL_DESC": RANKING_TOOL_DESC,
     "OPENAI_RANK_TOOL_DESC": OPENAI_RANK_TOOL_DESC,
     "FEATURE_STORE_RANK_TOOL_DESC": FEATURE_STORE_RANK_TOOL_DESC,
+    "BASKET_TOOL_DESC": BASKET_TOOL_DESC,
     "MAP_TOOL_DESC": MAP_TOOL_DESC,
 }
 
@@ -124,6 +134,7 @@ There are several tools to use:
 - {HardFilterTool}: {FEATURE_STORE_FILTER_TOOL_DESC}
 - {SoftFilterTool}: {SOFT_FILTER_TOOL_DESC}
 - {RankingTool}: {OPENAI_RANK_TOOL_DESC}
+- {BasketTool}: {BASKET_TOOL_DESC}
 - {MapTool}: {MAP_TOOL_DESC}
 """.format(
     **TOOL_NAMES, **_TOOL_DESC
@@ -172,5 +183,25 @@ Global and retailer click-through rate: Probability that the item was clicked (c
 and the specific retailer respectively. \n \
 Relevance score: A score indicating how relevant the item is to the user query. Ranges from 0 to 1. Please pay attention to this. \n \
 Exact match, Strong substitute, Weak substitute, Close complement, Remote complement: Flags that describe the relationship between the item \
-and the user query in more detail. Range from 0 to 1. For example, an exact match would have a value of 1, while a remote complement would have a value of 0. \n \
+and the user query in more detail. Range from 0 to 1. For example, an exact match would have an exact match value of 1. \n \
+"""
+
+BASKET_COMPILATION_PROMPT = """
+You are an expert grocery item recommender whose job is to compile a basket of items to recommend to the user. \
+You have to choose one item from each category, so that the total cost is below $20. Prioritize items higher up in each \
+of the lists if possible. \n 
+
+You should always first return a python list of integer item indexes of the items you picked. \
+For example, if there are two recommendations with indexes 481290 and 124259, \
+you should return [481290, 124259]. Do not return anything before the list. \n
+After the list, you should provide more information about the items picked, including their name, \
+category, price and index. \n
+
+Here are the items categories: {categories} \n
+Here is the budget: ${budget} \n
+
+Here are the items: \n
+{item_info} \n
+
+Now make your recommendations. Go! \
 """

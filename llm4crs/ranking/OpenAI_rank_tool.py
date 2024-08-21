@@ -21,10 +21,9 @@ class OpenAIRankingTool:
         col_names (list): The names of the columns to include in the item information.
         rec_num (int): The number of recommendations to return.
         explain_top (int): The number of top recommendations to provide explanations for.
-        api_key (str): The API key for the OpenAI API.
     """
     def __init__(self, name, desc, item_corpus, buffer, use='reco', col_names = None,
-                  rec_num=20, explain_top=5, api_key=None):
+                  rec_num=20, explain_top=5):
         self.name = name
         self.desc = desc
         self.item_corpus = item_corpus
