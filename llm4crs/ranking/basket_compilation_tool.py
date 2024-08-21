@@ -5,6 +5,7 @@ import time
 import ast
 
 from llm4crs.prompt import BASKET_COMPILATION_PROMPT
+from llm4crs.utils.util import ordinal
 
 class BasketTool:
     """
@@ -48,7 +49,7 @@ class BasketTool:
         reco_info = []
         for i, id in enumerate(item_ids):
             # initialize string with index
-            s = f"Item: "
+            s = f"{ordinal(i+1)} item: \n"
             for k in info.keys():
                 # include key and value in the string
                 s += f"{k}: {info[k][i]}\n"
@@ -90,6 +91,18 @@ class BasketTool:
         
         return valid, str(item_idx)
     
+
+    def check_budget_constraint(self, item_idx, budget):
+        """
+        Check if the budget constraint is met by the items returned by the OpenAI API.
+        """
+        # convert indexes to ids
+        item_ids = self.item_corpus.convert_index_2_id(item_idx)
+        # get prices of items
+        prices = self.item_corpus.convert_id_2_info(item_ids)['price']
+        # check if the sum of prices is less than the budget
+        return sum(prices) <= budget
+    
     
     def run(self, inputs):
 
@@ -110,7 +123,7 @@ class BasketTool:
             # get items in category
             item_ids = items[category]
             # get item information
-            item_info += self.get_item_info(item_ids)
+            item_info += self.get_item_info(item_ids) + '\n'
         
         # add item information to prompt
         prompt = BASKET_COMPILATION_PROMPT.format(categories=categories,budget=budget,
@@ -131,6 +144,10 @@ class BasketTool:
             # log error
             logger.error("Warning: LLM ranker returned invalid item IDs.")
 
-        # TODO check programmatically if budget constraint is met
+        # check if budget constraint is met
+        budget_constraint = self.check_budget_constraint(ast.literal_eval(item_idx), budget)
+        if not budget_constraint:
+            # log error
+            logger.error("Warning: LLM ranker did not meet budget constraint.")
 
         return explanations

@@ -160,6 +160,13 @@ def format_prompt(args_dict, prompt):
         prompt = prompt.replace(f"{{{k}}}", str(v))
     return prompt
 
+def ordinal(n):
+    if 11 <= (n % 100) <= 13:
+        suffix = 'th'
+    else:
+        suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
+    return str(n) + suffix
+
 
 __all__ = [
     "get_topk_index",

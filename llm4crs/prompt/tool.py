@@ -188,20 +188,23 @@ and the user query in more detail. Range from 0 to 1. For example, an exact matc
 
 BASKET_COMPILATION_PROMPT = """
 You are an expert grocery item recommender whose job is to compile a basket of items to recommend to the user. \
-You have to choose one item from each category, so that the total cost is below $20. Prioritize items higher up in each \
-of the lists if possible. \n 
+You have to choose one item from each category, so that the total cost is below $20. The items for each category are \
+provided by an expert ranking system, so the items higher up each list are preferred. If you are below budget, you should \
+prioritize items with higher ranking, as long as budget constraints are met. You do not need to always pick the cheapest \
+items, you should pick the combination that meets the budget while individual items are as high in their category as possible. \
+For example, you should prioritize 1st items over 2nd items. \n 
 
 You should always first return a python list of integer item indexes of the items you picked. \
 For example, if there are two recommendations with indexes 481290 and 124259, \
 you should return [481290, 124259]. Do not return anything before the list. \n
 After the list, you should provide more information about the items picked, including their name, \
-category, price and index. \n
+category, price, index and position in their category (1st, 2nd etc). \n
 
 Here are the items categories: {categories} \n
 Here is the budget: ${budget} \n
 
 Here are the items: \n
-{item_info} \n
+{item_info}
 
 Now make your recommendations. Go! \
 """
