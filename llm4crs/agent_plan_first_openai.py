@@ -5,6 +5,7 @@ import json
 import os
 import re
 import time
+import ast
 from copy import deepcopy
 from ast import literal_eval
 from collections import Counter
@@ -14,7 +15,7 @@ from loguru import logger
 
 from llm4crs.critic import Critic
 from llm4crs.demo.base import DemoSelector
-from llm4crs.prompt import SYSTEM_PROMPT_PLAN_FIRST, SYSTEM_PROMPT_PLAN_FIRST_RECO_ONLY, TOOLBOX_DESC, OVERALL_TOOL_DESC
+from llm4crs.prompt import *
 from llm4crs.utils import OpenAICall, num_tokens_from_string, format_prompt
 from llm4crs.utils.open_ai import get_openai_tokens
 from llm4crs.memory.memory import UserProfileMemory
@@ -83,11 +84,11 @@ class ToolBox:
         # parse json string of plans
         try:
             plans: list = json.loads(inputs)
-            plans = {t["tool_name"]: t["input"] for t in plans}
+            plans = [(t["tool_name"], t["input"]) for t in plans]
         except Exception as e:
             try:
                 plans = literal_eval(inputs)
-                plans = {t["tool_name"]: t["input"] for t in plans}
+                plans = [(t["tool_name"], t["input"]) for t in plans]
             except Exception as e:
                 success = False
                 return (
@@ -96,14 +97,7 @@ class ToolBox:
                 )
 
         # check if all tool names existing
-        _plans = deepcopy(plans)
-        plans = {}
-        for k, v in _plans.items():
-            if "Map" not in k:
-                plans[k] = v
-            else:
-                plans[k] = v
-        tool_not_exist = [k for k in plans.keys() if not any([x in k for x in self.tools.keys()])]
+        tool_not_exist = [k for k, _ in plans if not any(x in k for x in self.tools.keys())]
         if len(tool_not_exist) > 0:
             success = False
             return (
@@ -114,15 +108,17 @@ class ToolBox:
         # get ranking tool name as a string
         ranking_tool_string = str(self.tools['Candidates Ranking Tool'])
 
+        """
         # add map tool if it is missed and OpenAI ranking tool is not used
         if 'OpenAI' not in ranking_tool_string and not self._check_plan_legacy(plans):
             # add map tool manually
             plans[self.map_tool_name] = "5"
+        """
 
         # Main code: iterate through the planned tools and execute them
 
         res = ""  # to store results
-        for k, v in plans.items():
+        for k, v in plans:
             try:
                 if not isinstance(v, str):
                     v = json.dumps(v)
@@ -146,6 +142,11 @@ class ToolBox:
                     elif 'OpenAI' in ranking_tool_string:
                         input = v
                         v = {'input':input,'prompt':user_prompt,'agent':agent}
+                if 'basket' in k.lower():
+                    # convert from string to dictionary
+                    v = ast.literal_eval(v)
+                    # add agent to basket tool inputs
+                    v['agent'] = agent
                 # Find which tool matches the current plan step
                 for x in self.tools.keys():
                     if x in k:
@@ -154,7 +155,7 @@ class ToolBox:
                 # Execute the tool
                 output = self.tools[align_tool].run(v)
                 # Store the output if it is a look up tool or map tool, or the OpenAI ranking tool is used
-                if ("look up" in k.lower()) or ("map" in k.lower()) or ("ranking" in k.lower() and 'OpenAI' in ranking_tool_string):
+                if ("look up" in k.lower()) or ("map" in k.lower()) or ("ranking" in k.lower() and 'OpenAI' in ranking_tool_string) or ("basket" in k.lower()):
                     res += output
             except Exception as e:
                 logger.debug(f"Error: {e}")
@@ -304,6 +305,7 @@ class CRSAgentPlanFirstOpenAI:
         user_profile_update: int = -1,
         planning_recording_file: str = None,
         enable_summarize: int = 1,
+        prompt_template: str = SYSTEM_PROMPT_PLAN_FIRST_RECO_ONLY,
         **kwargs,
     ):
         # Redo all the domain-specific renaming here
@@ -364,6 +366,7 @@ class CRSAgentPlanFirstOpenAI:
         self.memory = None
         self.agent = None
         self.prompt = None
+        self.prompt_template = prompt_template
         self.user_profile_update = user_profile_update
         self._k_turn = 0
         self.user_profile = None
@@ -447,10 +450,11 @@ class CRSAgentPlanFirstOpenAI:
         # Dictionary of tool name and description fed to the system prompt
         tools_desc = "\n".join([f"{tool.name}: {tool.desc}" for tool in self._tools])
         tool_names = "[" + ", ".join([f"{tool.name}" for tool in self._tools]) + "]"
-        template = SYSTEM_PROMPT_PLAN_FIRST_RECO_ONLY.format(
+        template = self.prompt_template.format(
             tools_desc=tools_desc,
             tool_exe_name=self.toolbox.name,
             tool_names=tool_names,
+            example = EXAMPLE_BASKET,
             **self._tool_names,
             **self._domain_map,
         )
