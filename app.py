@@ -17,7 +17,7 @@ from llm4crs.critic import Critic
 from llm4crs.environ_variables import *
 from llm4crs.mapper import MapTool
 from llm4crs.prompt import *
-from llm4crs.ranking import RecModelTool, RankFeatureStoreTool, OpenAIRankingTool
+from llm4crs.ranking import RecModelTool, RankFeatureStoreTool, OpenAIRankingTool, RankRetrievalFeatureStoreTool, BasketTool
 from llm4crs.retrieval import SimilarItemTool, SQLSearchTool, FetchFeatureStoreItemsTool, FetchAllTool
 from llm4crs.query import QueryTool
 from llm4crs.utils import FuncToolWrapper
@@ -163,6 +163,13 @@ parser.add_argument(
     help="Use recommendation API in the fetch all tool",
 )
 
+# affordability basket use-case
+parser.add_argument(
+    "--affordability_basket",
+    action="store_true",
+    help="Operate in affordability basket mode",
+)
+
 args = parser.parse_args()
 
 # Define map that replaces {item} for domain specific item
@@ -201,6 +208,8 @@ candidate_buffer = CandidateBuffer(item_corpus, num_limit=args.max_candidate_num
 
 map_tool = True
 summarize = True
+basket_tool = False
+prompt_template = SYSTEM_PROMPT_PLAN_FIRST_RECO_ONLY
 
 if args.feature_store_tools:
     hard_filter_tool = FetchFeatureStoreItemsTool(
@@ -237,6 +246,25 @@ elif args.LLM_ranker:
     )
     map_tool = False
     summarize = False
+
+elif args.affordability_basket:
+    hard_filter_tool = FetchAllTool(
+        name=tool_names["HardFilterTool"],
+        desc='Placeholder tool. Please do not use.',
+        item_corpus=item_corpus,
+        buffer=candidate_buffer,
+    )
+    ranking_tool = RankRetrievalFeatureStoreTool(
+        name=tool_names["RankingTool"],
+        desc=RANK_RETRIEVAL_TOOL_DESC.format(**domain_map),
+        item_corpus=item_corpus,
+        buffer=candidate_buffer,
+    )
+    map_tool = False
+    summarize = False
+    basket_tool = True
+    prompt_template = SYSTEM_PROMPT_PLAN_FIRST_BASKET
+
 else:
     hard_filter_tool = SQLSearchTool(
         name=tool_names["HardFilterTool"],
@@ -286,6 +314,14 @@ if map_tool:
         buffer=candidate_buffer,
     )
 
+if basket_tool:
+    tools["BasketTool"] = BasketTool(
+        name=tool_names["BasketTool"],
+        desc=BASKET_TOOL_DESC.format(**domain_map),
+        item_corpus=item_corpus,
+        buffer=candidate_buffer,
+    )
+
 # Reflection tool is only available for plan-first agent
 if args.enable_reflection:
     critic = Critic(
@@ -324,7 +360,8 @@ bot = AgentType(
     reply_style=args.reply_style,  # only supported for CRSAgentPlanFirstOpenAI
     user_profile_update=args.update_user_profile,
     planning_recording_file='plans/plan.json',  # planning recording file
-    enable_summarize=summarize
+    enable_summarize=summarize,
+    prompt_template=prompt_template,
 )
 
 logger.remove()

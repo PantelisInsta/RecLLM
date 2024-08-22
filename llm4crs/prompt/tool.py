@@ -91,6 +91,14 @@ The tool is useful to filter {item} for recommendation and refine {item} order, 
 should typically be used after the fetch tool.
 """
 
+
+RANK_RETRIEVAL_TOOL_DESC = """
+The tool performs both retrieval and ranking of {item} relevant to a query for recommendations, and stores the items in the candidate buffer. \
+The input is a string query that is used to fetch the features of the {item} from the Instacart Feature Store. The query should NOT be a SQL command. \
+If the tool is being used in combination with the basket tool, the tool should be called multiple times in a row with different queries \
+to fetch and rank items from each category. \
+"""
+
 OPENAI_RANK_TOOL_DESC = """
 Ranking tool that relies on the OpenAI API to generate recommendations. The tool's input should be 'null' and the tool should typically be used after the hard filtering tool. The tool can return a \
 detailed explanation of the top recommendations, so no mapping tool is needed after that.

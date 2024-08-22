@@ -116,6 +116,9 @@ class RankRetrievalFeatureStoreTool:
         # convert product ids to internal ids
         ids = [self.item_corpus.convert_index_2_id(int(idx)) for idx in item_idx]
 
+        # remove None values
+        ids = [idx for idx in ids if idx is not None]
+
         # update buffer
         self.buffer.push("Feature store ranking tool",ids)
 
