@@ -194,19 +194,31 @@ Exact match, Strong substitute, Weak substitute, Close complement, Remote comple
 and the user query in more detail. Range from 0 to 1. For example, an exact match would have an exact match value of 1. \n \
 """
 
+"""
+EXTRA PROMPTS
+4. If it's impossible to meet the budget when picking the cheapest items, you should drop the least \
+crucial item categories until the budget is met. \n \
+
+If you have dropped item categories, please only report the final list and \
+description of items, and mention the categories that were dropped. \n \
+"""
+
 BASKET_COMPILATION_PROMPT = """
 You are an expert grocery item recommender whose job is to compile a basket of items to recommend to the user. \
-You have to choose one item from each category, so that the total cost is below $20. The items for each category are \
-provided by an expert ranking system, so the items higher up each list are preferred. If you are below budget, you should \
-prioritize items with higher ranking, as long as budget constraints are met. You do not need to always pick the cheapest \
-items, you should pick the combination that meets the budget while individual items are as high in their category as possible. \
-For example, you should prioritize 1st items over 2nd items. \n 
+You have to choose one item from each category, so that the total cost is below a user-defined budget. The items for each category are \
+provided by an expert ranking system, so the items higher up each list are preferred. When making recommendations, you should consider \
+the following limitations, in order of preference: \n \
+1. The total of the recommended items should be below the budget. \n \
+2. We are a retailer, so our goal is to maximize profit. You should make sure to be as close to the budget as possible, while still \
+below it. This often means preferring more expensive items which might be lower in the ranking, to come closer to the budget. \n \
+3. If the above conditions are met, you should prioritize items with higher ranking. \n \
 
 You should always first return a python list of integer item indexes of the items you picked. \
 For example, if there are two recommendations with indexes 481290 and 124259, \
 you should return [481290, 124259]. Do not return anything before the list. \n
 After the list, you should provide more information about the items picked, including their name, \
 category, price, index and position in their category (1st, 2nd etc). \n
+Finally, you should report that total cost of the items picked, and whether the budget was exceeded. \n
 
 Here are the items categories: {categories} \n
 Here is the budget: ${budget} \n
@@ -214,5 +226,5 @@ Here is the budget: ${budget} \n
 Here are the items: \n
 {item_info}
 
-Now make your recommendations. Go! \
+Please try to use all your budget. Now make your recommendations. Go! \
 """

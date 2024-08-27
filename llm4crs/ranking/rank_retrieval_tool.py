@@ -29,7 +29,7 @@ class RankRetrievalFeatureStoreTool:
     """
 
     def __init__(self, name, desc, item_corpus, buffer, terms=None, top_k=5,
-                  features=['ITEMS'], retailer_id=12):
+                  features=['ITEMS','USER_ID'], retailer_id=12):
         
         self.name = name
         self.desc = desc
@@ -107,7 +107,10 @@ class RankRetrievalFeatureStoreTool:
         self.fetch_rank_items()
 
         # Pick top k items according to relevance score
-        self.items_rank = self.items_rank.sort_values(by='relevance_score', ascending=False)
+        try:
+            self.items_rank = self.items_rank.sort_values(by='relevance_score', ascending=False)
+        except:
+            logger.error(f"No relevance score found in the feature store for term {term}.")
         self.items_rank = self.items_rank.head(self.top_k)
 
         # get product ids

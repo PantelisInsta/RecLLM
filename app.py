@@ -259,6 +259,7 @@ elif args.affordability_basket:
         desc=RANK_RETRIEVAL_TOOL_DESC.format(**domain_map),
         item_corpus=item_corpus,
         buffer=candidate_buffer,
+        terms=RANKING_SEARCH_TERMS_FILE,
     )
     map_tool = False
     summarize = False

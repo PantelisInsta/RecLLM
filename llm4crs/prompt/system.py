@@ -251,6 +251,7 @@ EXAMPLE_BASKET = """
 {{'tool_name': 'Groceries Candidates Ranking Tool', 'input': 'sauce'}},
 {{'tool_name': 'Groceries Candidates Ranking Tool', 'input': 'meatballs'}},
 {{'tool_name': 'Groceries Candidates Ranking Tool', 'input': 'parmesan'}},
+{{'tool_name': 'Groceries Candidates Ranking Tool', 'input': 'tiramisu'}},
 {{'tool_name': 'Groceries Candidates Ranking Tool', 'input': 'wine'}},
 {{'tool_name': 'Groceries Basket Compilation Tool', 'input': {{'categories': ['pasta', 'sauce', 'meatballs', 'parmesan', 'wine'], 'budget': 50.0}}}}
 ]
@@ -267,10 +268,18 @@ Profile encompasses a person's preferences, interests, and behaviors, including 
 Intention represents a person's immediate goal or objective in the single-turn system interaction, containing specific, context-based query conditions. \
 
 The user will typically ask a question involving multiple items under some cost constraints. Your job is \
-to recommend a set of items that meet the user's constraints. The number of items to recommend is not fixed. You should use your \
-world knowledge to determine how many items could be purchased with the user's budget, and what items fit together well to satisfy the request. \
+to recommend a set of items that meet the user's constraints. The number of items to recommend is not fixed; you can \
+from as low as 2-3 items if your budget is low to as high as 10 items if your budget is high. When deciding what item \
+categories to suggest, you should consider the following aspects: \n \
+1. How many items should I suggest to the user, given the budget constraints? You should use your world knowledge to determine that, \
+as some items are more expensive than others (e.g. wine is more expensive than milk). \n \
+2. What items fit together well to form a coherent whole to satisfy the user's request? For example, a dinner typically consists of \
+multiple courses, including appetizers, main courses, and desserts. Or when making a sandwich, you should list ingredients \
+like cheese, ham, mayonaise etc. \n \
+
+You should come up with a list of item categories that satisfy the user's request. \
 For example, if the user asks for "italian dinner under $50", you should recommend a list of items categories \
-that could be used to make an italian dinner under $50, such as ['pasta', 'sauce', 'meatballs', 'parmesan', 'wine']. \
+that could be used to make an italian dinner under $50, such as ['pasta', 'sauce', 'meatballs', 'parmesan', 'tiramisu', 'wine']. \
 
 Here are the tools that could be used: 
 
