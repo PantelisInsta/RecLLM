@@ -169,13 +169,14 @@ The format should be like: "[{'tool_name': TOOL-1, 'input': INPUT-1}, ..., {'too
 LLM_RANKER_PROMPT_TEMPLATE = """You are an expert grocery item recommender. Your job is to \
 recommend items to shoppers based on their query and candidate item information. Please try to \
 understand user intent from the query and recommend items that best match what the shopper \
-wants based on the provided item information. You should always first return a python list of {rec_num} integer item indexes in the \
-order of recommendation. If there are more than {rec_num} items, return the top {rec_num} \
-recommendations. If there are less than {rec_num} items, return all the items in the order of recomendation. \
-For example, if there are two recommendations with indexes 481290 and 124259, \
-you should return [481290, 124259]. Always return {rec_num} items, unless there are less than {rec_num} items available; in that case include all items in recommendation order. \n \
-After the list, you should also provide a justification for the top {explain_top} picks, along with a relevance score for them in regards to
-the user query, ranging from 0 for not relevant to 1 for highly relevant. \n \n \
+wants based on the provided item information. You should always first return a python list of {rec_num} \
+integer item indexes in the order of recommendation. If there are more than {rec_num} items, return the \
+top {rec_num} recommendations. If there are less than {rec_num} items, return all the items in the order \
+of recomendation. For example, if there are two recommendations with indexes 481290 and 124259, \
+you should return [481290, 124259]. Always return {rec_num} items, unless there are less than {rec_num} \
+items available; in that case include all items in recommendation order. \n \
+After the list, you should also provide a justification for the top {explain_top} picks, along with a relevance \
+score for them in regards to the user query, ranging from 0 for not relevant to 1 for highly relevant. \n \n \
 To help you decide, there is additional information about the relevance of each candidate items to the query, \
 provided by an expert system. These are: \n {{qc_info}} \n \
 {{user_info}} \n \
@@ -205,12 +206,13 @@ description of items, and mention the categories that were dropped. \n \
 
 BASKET_COMPILATION_PROMPT = """
 You are an expert grocery item recommender whose job is to compile a basket of items to recommend to the user. \
-You have to choose one item from each category, so that the total cost is below a user-defined budget. The items for each category are \
-provided by an expert ranking system, so the items higher up each list are preferred. When making recommendations, you should consider \
-the following limitations, in order of preference: \n \
+You have to choose one item from each category, so that the total cost is below a user-defined budget. The items \
+for each category are provided by an expert ranking system, so the items higher up each list are preferred. When \
+making recommendations, you should consider the following limitations, in order of preference: \n \
 1. The total of the recommended items should be below the budget. \n \
-2. We are a retailer, so our goal is to maximize profit. You should make sure to be as close to the budget as possible, while still \
-below it. This often means preferring more expensive items which might be lower in the ranking, to come closer to the budget. \n \
+2. We are a retailer, so our goal is to maximize profit. You should make sure to be as close to the budget as \
+possible, while still below it. This often means preferring more expensive items which might be lower in the \
+ranking, to come closer to the budget. \n \
 3. If the above conditions are met, you should prioritize items with higher ranking. \n \
 
 You should always first return a python list of integer item indexes of the items you picked. \
@@ -218,7 +220,6 @@ For example, if there are two recommendations with indexes 481290 and 124259, \
 you should return [481290, 124259]. Do not return anything before the list. \n
 After the list, you should provide more information about the items picked, including their name, \
 category, price, index and position in their category (1st, 2nd etc). \n
-Finally, you should report that total cost of the items picked, and whether the budget was exceeded. \n
 
 Here are the items categories: {categories} \n
 Here is the budget: ${budget} \n
@@ -226,5 +227,6 @@ Here is the budget: ${budget} \n
 Here are the items: \n
 {item_info}
 
-Please try to use all your budget. Now make your recommendations. Go! \
+Please try to use all your budget. DO NOT report the total cost of recommended items, or statements \
+about whether the budget is met or not. Now make your recommendations. Go! \
 """

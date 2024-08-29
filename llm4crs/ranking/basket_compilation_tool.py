@@ -101,7 +101,7 @@ class BasketTool:
         # get prices of items
         prices = self.item_corpus.convert_id_2_info(item_ids)['price']
         # check if the sum of prices is less than the budget
-        return sum(prices) <= budget
+        return sum(prices) <= budget, sum(prices)
     
     
     def run(self, inputs):
@@ -145,9 +145,12 @@ class BasketTool:
             logger.error("Warning: LLM ranker returned invalid item IDs.")
 
         # check if budget constraint is met
-        budget_constraint = self.check_budget_constraint(ast.literal_eval(item_idx), budget)
+        budget_constraint, cost = self.check_budget_constraint(ast.literal_eval(item_idx), budget)
         if not budget_constraint:
             # log error
             logger.error("Warning: LLM ranker did not meet budget constraint.")
+
+        # add information in explanations as to what is the total cost and if the budget constraint is met
+        explanations += f"\nTotal cost: ${cost}\nBudget constraint met: {budget_constraint}"
 
         return explanations

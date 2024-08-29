@@ -553,7 +553,7 @@ class CRSAgentPlanFirstOpenAI:
                 inputs["input"],
                 response,
                 prompt_map["history"],
-                self.candidate_buffer.track_info,
+                prompt_map["plan"],
             )
             if rechain:
                 logger.debug(

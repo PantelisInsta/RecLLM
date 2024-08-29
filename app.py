@@ -326,7 +326,7 @@ if basket_tool:
 # Reflection tool is only available for plan-first agent
 if args.enable_reflection:
     critic = Critic(
-        model="gpt-4" if "4" in args.engine else "gpt-3.5-turbo",
+        model="gpt-4o" if "4" in args.engine else "gpt-3.5-turbo",
         engine=args.engine,
         buffer=candidate_buffer,
         domain=domain,

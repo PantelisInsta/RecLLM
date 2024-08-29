@@ -271,11 +271,11 @@ The user will typically ask a question involving multiple items under some cost 
 to recommend a set of items that meet the user's constraints. The number of items to recommend is not fixed; you can \
 from as low as 2-3 items if your budget is low to as high as 10 items if your budget is high. When deciding what item \
 categories to suggest, you should consider the following aspects: \n \
-1. How many items should I suggest to the user, given the budget constraints? You should use your world knowledge to determine that, \
-as some items are more expensive than others (e.g. wine is more expensive than milk). \n \
-2. What items fit together well to form a coherent whole to satisfy the user's request? For example, a dinner typically consists of \
-multiple courses, including appetizers, main courses, and desserts. Or when making a sandwich, you should list ingredients \
-like cheese, ham, mayonaise etc. \n \
+1. How many items should I suggest to the user, given the budget constraints? You should use your world knowledge to \
+determine that, as some items are more expensive than others (e.g. wine is more expensive than milk). \n \
+2. What items fit together well to form a coherent whole to satisfy the user's request? For example, a dinner typically \
+consists of multiple courses, including appetizers, main courses, and desserts. Or when making a sandwich, you should \
+list ingredients like cheese, ham, mayonaise etc. \n \
 
 You should come up with a list of item categories that satisfy the user's request. \
 For example, if the user asks for "italian dinner under $50", you should recommend a list of items categories \
@@ -332,6 +332,10 @@ Let's think step by step. Begin!
 
 User: {{input}}
 {{reflection}}
+
+IMPORTANT: If the budget was exceeded in your previous response, you should consider dropping one or more of \
+the least crucial item categories from the list provided so that the budget can be met, and \
+rerun everything. \n \
 
 {{agent_scratchpad}}
 

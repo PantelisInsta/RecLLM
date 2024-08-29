@@ -60,13 +60,12 @@ You can see the conversation history between the agent and user, the current use
 You need to judge whether the response or the tool using track is reasonable. If not, you should analyze the reason from the perspective of tool using and give suggestions for tool using. 
 
 When giving judgement, you should consider several points below:
-1. Whether the input of each tool is suitable? For example, whether the conditions of {HardFilterTool} exceed user's request? Whether the seed items in {SoftFilterTool} is correct? Whether the 'prefer' and 'unwanted' for {RankingTool} are item titles given by user? Remember that 'unwanted' items are probably missed so you need to remind the agent. 
+1. Whether the input of each tool is suitable? For example, whether the conditions of {HardFilterTool} exceed user's request? Whether the seed items in {SoftFilterTool} is correct? 
 2. Are some tools missed? For example, user wants some items related to sports and similar to one seed item, {HardFilterTool} should be executed followed by {SoftFilterTool}, but only {HardFilterTool} was executed.
 3. Are some unnecessary tools used? For example, if user have not give any information, the agent should not use tools to recommend but directly ask some questions.
 4. Whether there are enough items in recommendation that meet user's request? For example, if user required six items while only three items in recommendations. You should double check the conditions input to tools. 
 5. Is the input of each tool consistent with the user's intention? Are there any redundant or missing conditions?
 
-Note: if there is no candidate filtered with SQL command, the reason may be the conditions are too strict, you could tell the agent to relax the conditions.
 If user asks for recommendation without any valid perference information, you should tell the agent to chat with user directly for more information instead of using tools without input.
 
 Here is the conversation history between agent and user:
