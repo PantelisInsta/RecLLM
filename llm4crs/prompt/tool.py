@@ -94,6 +94,7 @@ should typically be used after the fetch tool.
 
 RANK_RETRIEVAL_TOOL_DESC = """
 The tool performs both retrieval and ranking of {item} relevant to a query for recommendations, and stores the items in the candidate buffer. \
+Therefore, there is no need to use a filtering tool before this tool. \
 The input is a string query that is used to fetch the features of the {item} from the Instacart Feature Store. The query should NOT be a SQL command. \
 If the tool is being used in combination with the basket tool, the tool should be called multiple times in a row with different queries \
 to fetch and rank items from each category. \
@@ -197,8 +198,11 @@ and the user query in more detail. Range from 0 to 1. For example, an exact matc
 
 """
 EXTRA PROMPTS
-DO NOT report the total cost of recommended items, or statements \
-about whether the budget is met or not.
+4. If it's impossible to meet the budget when picking the cheapest items, you should drop the least \
+crucial item categories until the budget is met. \n \
+
+If you have dropped item categories, please only report the final list and \
+description of items, and mention the categories that were dropped. \n \
 """
 
 BASKET_COMPILATION_PROMPT = """
@@ -211,11 +215,6 @@ making recommendations, you should consider the following limitations, in order 
 possible, while still below it. This often means preferring more expensive items which might be lower in the \
 ranking, to come closer to the budget. \n \
 3. If the above conditions are met, you should prioritize items with higher ranking. \n \
-4. If it's impossible to meet the budget when picking the cheapest items, you should drop the least \
-crucial item categories until the budget is met. \n \
-
-If you have dropped item categories, please only report the final list and \
-description of items, and mention the categories that were dropped. \n \
 
 You should always first return a python list of integer item indexes of the items you picked. \
 For example, if there are two recommendations with indexes 481290 and 124259, \
@@ -229,5 +228,6 @@ Here is the budget: ${budget} \n
 Here are the items: \n
 {item_info}
 
-Please try to use all your budget. Now make your recommendations. Go! \
+Please try to use all your budget. DO NOT report the total cost of recommended items, or statements \
+about whether the budget is met or not. Now make your recommendations. Go! \
 """

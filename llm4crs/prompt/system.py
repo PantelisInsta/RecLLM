@@ -303,7 +303,8 @@ Here are the description of {tool_exe_name}:
 
 {{tools}}
 
-Not all tools are necessary in some cases, you should be flexible when using tools. 
+Not all tools are necessary in some cases, you should be flexible when using tools. It is OK to use the same tool multiple \
+times, as long as it is used to process different inputs.
 
 First you need to think whether to use tools. If no, use the format to output:
 
