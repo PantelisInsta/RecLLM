@@ -65,9 +65,9 @@ class BasketTool:
         """
         Split the output from the OpenAI API into a list of item IDs and detailed explanations.
         """
-        # find first occurernce of '[' and ']'
-        start = output.find('[')
-        end = output.find(']')
+        # find last occurrence of '[' and ']'
+        start = output.rfind('[')
+        end = output.rfind(']')
         # extract item IDs
         item_ids = output[start:end+1]
         # extract explanations
@@ -131,7 +131,7 @@ class BasketTool:
 
         # call OpenAI API to get recommendations
         start = time.time()
-        output = agent.call(prompt,max_tokens=1000)
+        output = agent.call(prompt,max_tokens=2000)
         end = time.time()
         logger.debug(f"LLM basket call latency: {end - start:.2f} s.")
 
