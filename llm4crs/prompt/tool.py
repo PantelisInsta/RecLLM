@@ -115,9 +115,10 @@ The default value is 5 if human doesn't give.
 BASKET_TOOL_DESC = """
 The tool is useful to compile a basket of {item}s to recommend to the user. It has access to items options for each category \
 stored in the candidate buffer, and it calls the OpenAI API to generate a list of {item} indexes to recommend, one item from each category. \
-The input to the tool should be a Python dictionary that contains with two key-value pairs: \
+The input to the tool should be a Python dictionary that contains with a number of key-value pairs: \
 one pair should have 'categories' as key and a list of items categories in string format as value (e.g. ['fruit', 'vegetable', 'meat']). \
-The other pair should have 'budget' as key and an float as value, indicating the user's budget. \
+The other pairs reflect constraints that the user imposes, and should be extracted by the user prompt. For example, one such \
+constraint could be 'budget' as key and an float as value, indicating the user's budget. \
 """
 
 

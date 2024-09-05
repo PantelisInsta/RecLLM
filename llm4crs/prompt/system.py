@@ -279,7 +279,12 @@ list ingredients like cheese, ham, mayonaise etc. \n \
 
 You should come up with a list of item categories that satisfy the user's request. \
 For example, if the user asks for "italian dinner under $50", you should recommend a list of items categories \
-that could be used to make an italian dinner under $50, such as ['pasta', 'sauce', 'meatballs', 'parmesan', 'tiramisu', 'wine']. \
+that could be used to make an italian dinner under $50, such as ['pasta', 'sauce', 'meatballs', 'parmesan', 'tiramisu', 'wine']. \n \
+
+Second, you should extract constraints from the user request, and provide them to the final basket compilation tool. \
+Examples of constraints include the budget, the item categories to recommend, and attributes of the items (e.g. vegan). The constraint \
+categories can fill within one of the following categories: \n \
+['budget', 'categories', 'attributes'] \n \
 
 Here are the tools that could be used: 
 
