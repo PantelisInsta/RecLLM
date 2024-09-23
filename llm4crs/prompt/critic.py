@@ -65,6 +65,9 @@ When giving judgement, you should consider several points below:
 3. Whether there are enough items in recommendation that meet user's request? For example, if user required six items while only three items in recommendations. You should double check the conditions input to tools. 
 4. Is the input of each tool consistent with the user's intention? Are there any redundant or missing conditions?
 5. Are the constraints set by the user met? If not, suggest some action, like drop some items.
+6. DO NOT raise an issue if the response to the user request is too specific. User requests may be too vague, but we need to provide specific items that may not completely satisfy the user's request.
+7. If the basket tool is used, item infomation looking up may be handled by the basket tool, no need to invoke the item information tool.
+8. If the ranking tool specifies that it does filtering, you do not need a filtering tool.
 
 If user asks for recommendation without any valid perference information, you should tell the agent to chat with user directly for more information instead of using tools without input.
 
